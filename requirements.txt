@@ -1,0 +1,8 @@
+streamlit
+geemap
+pandas
+numpy
+altair
+streamlit_folium
+statsmodels
+folium
