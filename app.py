@@ -229,7 +229,6 @@ def transform(df):
 	return dfm
 
 def main():
-	st.text('Add option to download timelapse, publish maps')
 	st.image(r'./assets/header.jpg')
 	navigation = st.sidebar.selectbox('Navigation', ['Assessment', 'Manual', 'Generate Report'])
 	if navigation == 'Assessment':
