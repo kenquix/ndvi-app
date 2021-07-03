@@ -543,10 +543,10 @@ def main():
 			)
 		
 		#save visualizations as png
-		altA.save('chart1.png')
-		altAA.save('chart1a.png')
-		(lineB + bandB).save('chart2.png')
-		altC.save('chart3.png')
+		# altA.save('chart1.png')
+		# altAA.save('chart1a.png')
+		# (lineB + bandB).save('chart2.png')
+		# altC.save('chart3.png')
 
 		x = np.array(pd.to_datetime(df.Timestamp), dtype=float)
 		y = df.NDVI_Lowess
@@ -732,15 +732,15 @@ def main():
 					else:
 						pdf.cell(w=w, h=h, txt=export_df.loc[row, col], border=1, ln=1, align='C')
 
-			pdf.ln(5)
-			pdf.image('chart1.png', w=190, h=100)
-			pdf.ln(5)
-			pdf.image('chart1a.png', w=190, h=100)
-			pdf.ln(5)
-			pdf.image('chart2.png', w=190, h=80)
-			pdf.ln(5)
-			pdf.image('chart3.png', w=190, h=80)
-			pdf.ln(5)
+			# pdf.ln(5)
+			# pdf.image('chart1.png', w=190, h=100)
+			# pdf.ln(5)
+			# pdf.image('chart1a.png', w=190, h=100)
+			# pdf.ln(5)
+			# pdf.image('chart2.png', w=190, h=80)
+			# pdf.ln(5)
+			# pdf.image('chart3.png', w=190, h=80)
+			# pdf.ln(5)
 			
 			html = create_download_link(pdf.output(dest="S").encode("latin-1"), f"Green Report")
 
