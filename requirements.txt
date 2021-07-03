@@ -6,3 +6,5 @@ altair
 streamlit_folium
 statsmodels
 folium
+altair_saver
+fpdf
