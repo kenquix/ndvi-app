@@ -1,0 +1,13 @@
+streamlit
+geemap
+pandas
+numpy
+altair
+streamlit_folium
+statsmodels
+folium
+altair_saver
+fpdf
+html2image
+vega-cli
+vega-lite-cli

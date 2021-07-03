@@ -292,14 +292,13 @@ def main():
 				**Important!** At the lower left corner, select the **GEOJSON** format and copy
 				the coordinates.
 				""")
+			inputFile = st.file_uploader('Upload a file', type=['shp'])
 			components.iframe('https://boundingbox.klokantech.com/', height=500)
 
 		inputRegion = st.text_input(f'Paste ROI coordinates here and press Enter:')
 
 		Map = geemap.Map()
 
-		inputFile = st.sidebar.file_uploader('Upload a file', type=['shp'])
-		
 		default_region = '[[[120.9845116619,14.5558642572],\
 							[121.1177208904,14.5558642572],\
 							[121.1177208904,14.6030462531],\
@@ -540,7 +539,7 @@ def main():
 				tooltip=[alt.Tooltip('Dates:N', title='Date'),
 						alt.Tooltip('NDVI:Q', bin=alt.Bin(maxbins=100)),
 						alt.Tooltip('count()', title='Count')]
-			)
+			).interactive()
 		
 		#save visualizations as png
 		# altA.save('chart1.png')
