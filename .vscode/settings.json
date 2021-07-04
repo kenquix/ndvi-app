@@ -1,3 +1,4 @@
 {
-    "python.pythonPath": "C:\\Users\\Lenovo\\miniconda3\\envs\\gee\\python.exe"
+    "python.pythonPath": "C:\\Users\\Lenovo\\miniconda3\\envs\\gee\\python.exe",
+    "git.ignoreLimitWarning": true
 }
