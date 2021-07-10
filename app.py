@@ -3,14 +3,16 @@ import ee
 import json
 import base64
 import geemap
-# from numpy.lib.function_base import select
+import imageio
+from PIL import Image
+from PIL import ImageFont
+from PIL import ImageDraw 
 import streamlit as st
 
 import pandas as pd
 import numpy as np
 import altair as alt
 from fpdf import FPDF
-# from toolz.functoolz import do
 from html2image import Html2Image
 from datetime import timedelta, datetime
 
@@ -18,12 +20,14 @@ import streamlit.components.v1 as components
 from streamlit_folium import folium_static
 
 import statsmodels.api as sm
+
 from statsmodels.nonparametric.smoothers_lowess import lowess
+from statsmodels.tsa.stattools import adfuller
 
 import folium
 from folium import plugins
   
-st.set_page_config(page_title='Green App', page_icon='🌳') #initial_sidebar_state='expanded'
+st.set_page_config(page_title='Green App', page_icon='🌳')
 
 # Add custom basemaps to folium
 basemaps = {
@@ -175,8 +179,8 @@ def read_img(startdate, enddate, aoi):
 
 	diff_img = end_img.subtract(start_img)
 
-	classes = ['Soil/Water [-1-0)', 'Very Low [0-0.2)', 'Low [0.2-0.4)', 
-			'Mod. Low [0.4-0.6)', 'Mod. High [0.6-0.8)', 'High [0.8-1.0]']
+	classes = ['Soil/Water', 'Very Low', 'Low', 
+			'Mod. Low', 'Mod. High', 'High']
 
 	bins = [-1, 0 ,0.2 ,0.4 ,0.6 ,0.8 ,1.0]
 	
@@ -263,217 +267,227 @@ def main():
 	# st.write('Export maps and viz into reports, measure time for page to load, forecast, team members and references tab')
 	st.image(r'./assets/header.jpg')
 	st.sidebar.subheader('Customization Panel')
-	navigation = st.sidebar.selectbox('Navigation', ['Assessment', 'Manual', 'Download file', 'Team members', 'References'])
-	if navigation == 'Assessment':
-		st.title('Vegetation Health Assessment App')
+	navigation = st.sidebar.selectbox('Navigation', ['Home', 'Manual'])
+	if navigation == 'Home':
+		st.title('Vegetation Monitoring App')
 		with st.beta_expander('About the app', expanded=True):
 			st.markdown(f"""
 				<p align="justify">The web app aims to provide helpful information that can aid in efforts to protect our forest
-				ecosystem. It utilizes the <a href="https://developers.google.com/earth-engine/datasets/catalog/LANDSAT_LC08_C01_T1_TOA">Landsat 8 Collection 1 Tier 1</a> 
+				ecosystem. It utilizes the <a href="https://developers.google.com/earth-engine/datasets/catalog/LANDSAT_LC08_C01_T1_8DAY_NDVI">Landsat 8 Collection 1 Tier 1</a> 
 				8-Day Normalized Difference Vegetation Index (NDVI) composite at 30-meter resolution to provide 
 				an overview of vegetation health of an area from 2013 - present.</p>
 
-				<p align="justify"><a href="https://gisgeography.com/ndvi-normalized-difference-vegetation-index/">NDVI</a> is an indicator used to quantify vegetation health based on how the vegetation respond to 
+				<p align="justify"><a href="https://gisgeography.com/ndvi-normalized-difference-vegetation-index/">NDVI</a> is an indicator used to quantify vegetation health based on how the vegetation responds
 				light at the Near Infrared (NIR) and Red bands. NDVI ranges from -1.0 to +1.0.</p> 
 
-				<p align="justify">NDVI <em>less than 0.2 are classified as Non-vegetation</em> (barren lands, build-up area, road network), <em>between 0.2 to 0.5 (inclusive) as Low Vegetation</em> 
-				(shrubs and grassland ) and <em>greater than 0.5 to 1.0 as Dense vegetation</em> (temperate and tropical urban forest).
+				<p align="justify">The NDVI values are classified into six (6) distinct classes:
+				<ul>
+				<li>Bare Soil and/or Water: -1 to 0 (exclusive)</li>
+				<li>Very Low Vegetation: 0 to 0.2 (exclusive)</li>
+				<li>Low Vegetation: 0.2 to 0.4 (exclusive)</li>
+				<li>Moderately Low Vegetation: 0.4 to 0.6 (exclusive)</li>
+				<li>Moderately High Vegetation: 0.6 to 0.8 (exclusive)</li>
+				<li>High Vegetation: 0.8 to 1.0 (inclusive)</li></ul></p>
 
-				<p align="justify"><em><font color="#85221A">Note: The information presented in this app serves as guide. Ground validation should still be conducted to verify its accuracy.</font></em></p> 
+				<p align="justify"><em><font color="#85221A">Note: The information presented in this app serves as a guide only. Ground validation should still be conducted to verify its accuracy.</font></em></p> 
 				""", unsafe_allow_html=True)
 
-		st.markdown(f"""
-			<p align="justify"><strong>How to explore the app:</strong><br>   
-			1. You can either <strong>upload a local file</strong> (*.shp format) or <strong>draw a bounding box</strong> to define a region of interest
-			(ROI).<br> 
-			2. Define a start and end date. <br>
-			3. Wait for the app to load the NDVI composite images available for the region and dates selected.</p> 
+		st.subheader('A. Data Collection')
+		with st.beta_expander('', expanded=True):
+			st.markdown(f"""
+				<p align="justify">Select an Area of Interest (AOI) by either <strong>(a) uploading a local file</strong> (*.shp format) or <strong>(b) drawing a bounding box</strong>.</p> 
+				""", unsafe_allow_html=True)	
+			inputFile = st.file_uploader('a. Upload a file', type=['shp'],
+									help='Currently, only shapefile format AOI is accepted')
+			st.markdown('<p style="font-size:13px">b. Draw a bounding box</p>', unsafe_allow_html=True)
+			# st.markdown('<br>', unsafe_allow_html=True)	
+			st.markdown(f"""
+				<ul>
+				<li>Click OK to accept cookies.</li>
+				<li>Select user-defined AOI by utilizing the toolbars located at
+				the upper left corner of the map or using the search box.</li>
+				<li>At the lower left corner, select the <strong>GEOJSON</strong> format and copy
+				the coordinates.</li><br>
+				""", unsafe_allow_html=True)
+			components.iframe('https://boundingbox.klokantech.com/', height=500)
+		
+			inputRegion = st.text_input(f'Paste AOI coordinates here and press Enter:', 
+									help='Currently, only GeoJSON formatted AOI is accepted')
+
+			Map = geemap.Map()
+
+			default_region = '[[[125.4727148947,8.9012996164],\
+								[125.5990576681,8.9012996164],\
+								[125.5990576681,8.9828386907],\
+								[125.4727148947,8.9828386907],\
+								[125.4727148947,8.9012996164]]]'
+				
+			try:
+				if inputFile is None and len(inputRegion)==0:
+					# region = geemap.shp_to_geojson(r'./assets/butuan_city_gcs.shp')
+					# data = region['features'][0]['geometry']['coordinates']
+					data = json.loads(default_region)
+
+				elif inputFile and len(inputRegion) == 0:
+					region = geemap.shp_to_ee(os.path.join(os.getcwd(),'assets',inputFile.name))
+					data = region.geometry().getInfo()['coordinates']
+
+				else:
+					if inputRegion[:3] == '[[[':
+						data = json.loads(inputRegion)
+					else:
+						inputRegion = '[[' + inputRegion + ']]'
+						data = json.loads(inputRegion)
+			except:
+				st.error(f'Error: Expected a different input. Make sure you selected the GEOJSON format.')
+				return
+
+			aoi = ee.FeatureCollection(ee.Geometry.Polygon(data))
+			
+			df = read_data(aoi)
+			df_annual = transform(df)
+
+			lon, lat = aoi.geometry().centroid().getInfo()['coordinates']
+			
+			st.markdown(f"""
+				Area of AOI is **{aoi.geometry().area().getInfo()/10000:,.02f} has**. The centroid is 
+				located at **({lat:.02f} N, {lon:.02f} E)**.
+				""")
+		with st.beta_container():		
+			# st.markdown('---')
+			st.subheader('B. Map Visualization')
+			st.markdown(f"""
+			1. Use the slider widget to select the DOI.<br>
+			2. Wait for the app to load the NDVI composite images available for the AOI and DOI.
+			3. Explore the layers.
+			4. Generate timelapse of Annual Landsat composites (Convert to NDVI)
 			""", unsafe_allow_html=True)
 
-		with st.beta_expander('Click to draw a bounding region'):
-			st.markdown(f"""
-				You can select the region of interest (ROI) here. \n
-				Click OK to accept cookies. Select ROI by utilizing the toolbars located at
-				the upper left of the map or using the search box.
+			startdate, enddate = st.select_slider('DOI Slider', 
+				df.Timestamp.unique().tolist(), 
+				value=[df.Timestamp.unique().tolist()[0], df.Timestamp.unique().tolist()[-1]],
+				help="Use the slider to select the DOI's (start and end date)")
+
+			startdate_format = startdate.strftime('%B %d, %Y')
+			enddate_format = enddate.strftime('%B %d, %Y')
+
+			df = df[(df.Timestamp >= startdate) & (df.Timestamp <= enddate)]
+			df['Timestamp'] = pd.to_datetime(df.Timestamp)
+			
+			export_df, report_df, start_img, end_img, diff_img, diff_bin_norm, hist_df = read_img(startdate, enddate, aoi)
 				
-				**Important!** At the lower left corner, select the **GEOJSON** format and copy
-				the coordinates.
-				""")
-			components.iframe('https://boundingbox.klokantech.com/', height=500)
+			visParams = {
+				'bands': ['NDVI'],
+				'min': 0,
+				'max': 1,
+					'palette': [
+					'FFFFFF', 'CE7E45', 'DF923D', 'F1B555', 'FCD163', '99B718', '74A901',
+					'66A000', '529400', '3E8601', '207401', '056201', '004C00', '023B01',
+					'012E01', '011D01', '011301'
+				],
+				'opacity':.8
+				}
 
-		inputFile = st.file_uploader('Upload a file', type=['shp'],
-									help='Currently, only shapefile format ROI is accepted')
-		inputRegion = st.text_input(f'Paste ROI coordinates here and press Enter:', 
-									help='Currently, only GeoJSON formatted ROI is accepted')
+			visParams_diff = {
+				'bands': ['NDVI'],
+				'min': -1,
+				'max': 1,
+					'palette': [
+					'#FF4C56', '#FFFFFF', '#73DA6E'
+				],
+				'opacity':.7,
+				}
 
-		Map = geemap.Map()
+			# Create a folium map object.
+			my_map = folium.Map(location=[lat, lon], zoom_start=12)
 
-		default_region = '[[[120.9845116619,14.5558642572],\
-							[121.1177208904,14.5558642572],\
-							[121.1177208904,14.6030462531],\
-							[120.9845116619,14.6030462531],\
-							[120.9845116619,14.5558642572]]]'
-		
-		try:
-			if inputFile is None and len(inputRegion)==0:
-				# region = geemap.shp_to_geojson(r'./assets/butuan_city_gcs.shp')
-				# data = region['features'][0]['geometry']['coordinates']
-				data = json.loads(default_region)
+			# Add custom basemaps
+			basemaps['Google Maps'].add_to(my_map)
+			basemaps['Google Satellite Hybrid'].add_to(my_map)
 
-			elif inputFile and len(inputRegion) == 0:
-				region = geemap.shp_to_ee(os.path.join(os.getcwd(),'assets',inputFile.name))
-				data = region.geometry().getInfo()['coordinates']
+			my_map.add_ee_layer(start_img.clip(aoi.geometry()), visParams, f'{startdate}_IMG')
+			my_map.add_ee_layer(end_img.clip(aoi.geometry()), visParams, f'{enddate}_IMG')
+			my_map.add_ee_layer(diff_img.clip(aoi.geometry()), visParams_diff, 'NDVI Diff_IMG')
 
-			else:
-				if inputRegion[:3] == '[[[':
-					data = json.loads(inputRegion)
-				else:
-					inputRegion = '[[' + inputRegion + ']]'
-					data = json.loads(inputRegion)
-		except:
-			st.error(f'Error: Expected a different input. Make sure you selected the GEOJSON format.')
-			return
+			# # Add a layer control panel to the map.
+			my_map.add_child(folium.LayerControl())
+			my_map.add_child(folium.LatLngPopup())
 
-		aoi = ee.FeatureCollection(ee.Geometry.Polygon(data))
-		
-		df = read_data(aoi)
-		df_annual = transform(df)
+			# # Add fullscreen button
+			plugins.Fullscreen().add_to(my_map)
+			plugins.MiniMap().add_to(my_map)
 
-		lon, lat = aoi.geometry().centroid().getInfo()['coordinates']
-		
-		st.session_state.lon = lon
-		st.session_state.lat = lat
-
-		st.markdown(f"""
-			Area of ROI is **{aoi.geometry().area().getInfo()/10000:,.02f} has**. The centroid is 
-			located at **({lat:.02f} N, {lon:.02f} E)**.
-			""")
-		
-		startdate, enddate = st.select_slider('Use the slider to select the start and end date', 
-			df.Timestamp.unique().tolist(), 
-			value=[df.Timestamp.unique().tolist()[0], df.Timestamp.unique().tolist()[-1]],
-			help='Drag the dots at the left and right ends of the slider to define the start and end dates, respectively.')
-
-		startdate_format = startdate.strftime('%B %d, %Y')
-		enddate_format = enddate.strftime('%B %d, %Y')
-
-		df = df[(df.Timestamp >= startdate) & (df.Timestamp <= enddate)]
-		df['Timestamp'] = pd.to_datetime(df.Timestamp)
-		export_df, report_df, start_img, end_img, diff_img, diff_bin_norm, hist_df = read_img(startdate, enddate, aoi)
-			
-		visParams = {
-			'bands': ['NDVI'],
-			'min': 0,
-			'max': 1,
-				'palette': [
-				'FFFFFF', 'CE7E45', 'DF923D', 'F1B555', 'FCD163', '99B718', '74A901',
-				'66A000', '529400', '3E8601', '207401', '056201', '004C00', '023B01',
-				'012E01', '011D01', '011301'
-			],
-			'opacity':.8
-			}
-
-		visParams_diff = {
-			'bands': ['NDVI'],
-			'min': -1,
-			'max': 1,
-				'palette': [
-				'#FF4C56', '#FFFFFF', '#73DA6E'
-			],
-			'opacity':.7,
-			}
-
-		# Create a folium map object.
-		my_map = folium.Map(location=[lat, lon], zoom_start=12)
-
-		# Add custom basemaps
-		basemaps['Google Maps'].add_to(my_map)
-		basemaps['Google Satellite Hybrid'].add_to(my_map)
-
-		my_map.add_ee_layer(start_img.clip(aoi.geometry()), visParams, f'{startdate}_IMG')
-		my_map.add_ee_layer(end_img.clip(aoi.geometry()), visParams, f'{enddate}_IMG')
-		my_map.add_ee_layer(diff_img.clip(aoi.geometry()), visParams_diff, 'NDVI Diff_IMG')
-
-		# # Add a layer control panel to the map.
-		my_map.add_child(folium.LayerControl())
-		my_map.add_child(folium.LatLngPopup())
-
-		# # Add fullscreen button
-		plugins.Fullscreen().add_to(my_map)
-		plugins.MiniMap().add_to(my_map)
-
-		with st.beta_container():
 			folium_static(my_map)
-		
-		timelapse = st.checkbox('Check to show a timelapse of annual Landsat composite of the selected region')
-		
-		if timelapse:
-			out_dir = os.path.join(os.getcwd(), 'assets')
-
-			if not os.path.exists(out_dir):
-				os.makedirs(out_dir)
-
-			out_gif = os.path.join(out_dir, 'landsat_ts.gif')
-
-			s1 = startdate.strftime('%Y-%m-%d')
-			d1 = enddate.strftime('%Y-%m-%d')
-
-			band_options = {'Color Infrared (Vegetation)': ['NIR', 'Red', 'Green'],
-						'False Color': ['SWIR2', 'SWIR1', 'Red'],
-						'Natural Color': ["Red", "Green", 'Blue'],
-						'Agriculture': ['SWIR1', 'NIR', 'Blue'],
-						'Healthy Vegetation': ['NIR', 'SWIR1', 'Blue'],
-						'Land/Water': ['NIR', 'SWIR1', 'Red'],
-						'Natural with Atmospheric Removal': ['SWIR2', 'NIR', 'Green'],
-						'Shortwave Infrared': ['SWIR2', 'NIR', 'Green'],
-						'Vegetation Analysis': ['SWIR1', 'NIR', 'Red']}
-
-			ts_bands = st.selectbox('Select bands to visualize', list(band_options.keys()),
-									help="""Color Infrared (Vegetation), ['NIR', 'Red', 'Green']\
-											False Color, ['SWIR2', 'SWIR1', 'Red']\
-											Natural Color, ['Red', 'Green', 'Blue']\
-											Agriculture, ['SWIR1', 'NIR', 'Blue']\
-											Healthy Vegetation, ['NIR', 'SWIR1', 'Blue']\
-											Land/Water, ['NIR', 'SWIR1', 'Red']\
-											Natural with Atmospheric Removal, ['SWIR2', 'NIR', 'Green']\
-											Shortwave Infrared, ['SWIR2', 'NIR', 'Green']\
-											Vegetation Analysis, ['SWIR1', 'NIR', 'Red']
-									""")
-
-			Map.add_landsat_ts_gif(
-				layer_name="Timelapse",
-				roi=aoi.geometry(),
-				# label='Timelapse',
-				start_year=startdate.year,
-				end_year=enddate.year,
-				start_date=s1[5:],
-				end_date=d1[5:],
-				bands=band_options[ts_bands],
-				vis_params=None,
-				dimensions=700,
-				frames_per_second=.5,
-				font_size=30,
-				font_color="white",
-				add_progress_bar=True,
-				progress_bar_color="cyan",
-				progress_bar_height=5,
-				out_gif=out_gif,
-				download=True)
-
-			file_ = open(out_gif, "rb")
-			contents = file_.read()
-			data_url = base64.b64encode(contents).decode("utf-8")
-			file_.close()
 			
-			st.markdown(f"""<center><img src="data:image/gif;base64,{data_url}" alt="timelapse gif"></center>""",
-				unsafe_allow_html=True)
+			# st.markdown('<br>', unsafe_allow_html=True)	
+			with st.beta_expander('Timelapse of NDVI Composite Images', expanded=True):
+				timelapse = st.checkbox('Check to generate the animation.')
+				
+				if timelapse:
+					out_dir = os.path.join(os.getcwd(), 'assets')
+
+					if not os.path.exists(out_dir):
+						os.makedirs(out_dir)
+
+					out_gif = os.path.join(out_dir, 'landsat_ts.gif')
+
+					s1 = startdate.strftime('%Y-%m-%d')
+					d1 = enddate.strftime('%Y-%m-%d')
+
+					band_options = {'Color Infrared (Vegetation)': ['NIR', 'Red', 'Green'],
+								'False Color': ['SWIR2', 'SWIR1', 'Red'],
+								'Natural Color': ["Red", "Green", 'Blue'],
+								'Agriculture': ['SWIR1', 'NIR', 'Blue'],
+								'Healthy Vegetation': ['NIR', 'SWIR1', 'Blue'],
+								'Land/Water': ['NIR', 'SWIR1', 'Red'],
+								'Natural with Atmospheric Removal': ['SWIR2', 'NIR', 'Green'],
+								'Shortwave Infrared': ['SWIR2', 'NIR', 'Green'],
+								'Vegetation Analysis': ['SWIR1', 'NIR', 'Red']}
+
+					ts_bands = st.selectbox('Select bands to visualize', list(band_options.keys()),
+											help="""Color Infrared (Vegetation), ['NIR', 'Red', 'Green']\
+													False Color, ['SWIR2', 'SWIR1', 'Red']\
+													Natural Color, ['Red', 'Green', 'Blue']\
+													Agriculture, ['SWIR1', 'NIR', 'Blue']\
+													Healthy Vegetation, ['NIR', 'SWIR1', 'Blue']\
+													Land/Water, ['NIR', 'SWIR1', 'Red']\
+													Natural with Atmospheric Removal, ['SWIR2', 'NIR', 'Green']\
+													Shortwave Infrared, ['SWIR2', 'NIR', 'Green']\
+													Vegetation Analysis, ['SWIR1', 'NIR', 'Red']
+											""")
+
+					Map.add_landsat_ts_gif(
+						layer_name="Timelapse",
+						roi=aoi.geometry(),
+						# label='Timelapse',
+						start_year=startdate.year,
+						end_year=enddate.year,
+						start_date=s1[5:],
+						end_date=d1[5:],
+						bands=band_options[ts_bands],
+						vis_params=None,
+						dimensions=650,
+						frames_per_second=.5,
+						font_size=30,
+						font_color="white",
+						add_progress_bar=True,
+						progress_bar_color="cyan",
+						progress_bar_height=5,
+						out_gif=out_gif,
+						download=True)
+
+					file_ = open(out_gif, "rb")
+					contents = file_.read()
+					data_url = base64.b64encode(contents).decode("utf-8")
+					file_.close()
 					
-		# create an interval selection over an x-axis encoding
-		# brush = alt.selection_interval(encodings=['x'])
+					st.markdown(f"""<center><img src="data:image/gif;base64,{data_url}" alt="timelapse gif"></center>""",
+						unsafe_allow_html=True)
 
-		# determine opacity based on brush
-		# opacity = alt.condition(brush, alt.value(0.9), alt.value(0.1))
+				st.markdown('<br>', unsafe_allow_html=True)			
 
+		st.markdown('---')
+		st.subheader('C. Data Analytics')
 		highlightA = alt.selection(
 		type='single', on='mouseover', fields=['Year'], nearest=True)
 
@@ -545,11 +559,11 @@ def main():
 			trending =' DOWN'
 
 		st.write(' ')
-		st.info(f"""Overall, mean NDVI for the *selected region* and *dates* is **{mean_ndvi:0.3f}** and is **trending {trending}!** 📈 and \
+		st.info(f"""Overall, mean NDVI for the *selected AOI* and *dates* is **{mean_ndvi:0.3f}** and is **trending {trending}!** 📈 and \
 					the area where a **positive NDVI change** is observed is at **{positive_change:0.2%}**!
 					\nSelected dates: **{startdate_format} - {enddate_format}**   
-					Number of days betweet selected dates: **{(enddate - startdate).days:,} days**    
-					Number of datapoints between the selected dates: **{df.shape[0]}**   
+					Number of days between selected dates: **{(enddate - startdate).days:,} days**    
+					Number of images available between the selected dates: **{df.shape[0]}**   
 					""")
 
 		decrease_list = list(report_df[report_df.Interpretation.isin(['Decrease'])].index)
@@ -559,8 +573,6 @@ def main():
 
 		st.dataframe(report_df)
 		st.markdown(f"""
-			<p align="justify">The NDVI values were further classified into six (6) classes: <em>{', '.join(list(report_df.index))}</em>.</p>
-
 			<p align="justify">A decrease in the first four (4) NDVI classes (i.e., -1 - 0.6) or an increase in the remaining NDVI classes
 			(i.e., 0.6 above) is interpreted as positive and vice versa. </p>
 			
@@ -569,21 +581,19 @@ def main():
 			<font color="#A42F25"><strong>{', '.join(decrease_list)}</strong></font>.</p>
 			""", unsafe_allow_html=True)
 		st.markdown('---')
-		st.subheader('Exploratory Visualization')
-		st.markdown(f'Figure 1. Distribution of NDVI values for images of selected dates', unsafe_allow_html=True)
+		st.subheader('Exploratory Analysis')
 		st.altair_chart(altC, use_container_width=True)
+		st.markdown(f'<center>Figure 1. Distribution of NDVI values for images of selected dates</center><br>', unsafe_allow_html=True)
+
 		st.markdown(f"""
 			<p align="justify">Figure 1 shows the distribution of NDVI values for each pixel (100-meter resolution). The
 			<strong><font color="#9198A2">blue bars</font></strong> correspond to the earliest available image between the selected dates (i.e., <strong>{startdate}</strong>), 
-			while the <strong><font color="#BAA083">orange bars</font></strong> corresponds to the most recent available image (i.e., <strong>{enddate}</strong>).</p>
-
+			while the <strong><font color="#BAA083">orange bars</font></strong> correspond to the most recent available image (i.e., <strong>{enddate}</strong>).</p>
 			<p align="justify">For the image on {startdate}, the figure shows that 50% of the data lies between <strong>{start_lower:.2f} - {start_upper:.2f}</strong>
 			(inclusive), while for the image on {enddate}, 50% of the data lies between <strong>{end_lower:.2f} - {end_upper:.2f}</strong>
 			(inclusive).</p>
 			""", unsafe_allow_html=True)
 
-		st.markdown('Figure 2. Mean NDVI Time-series over the region for imagery at every available date')
-		
 		option1, option2 = st.beta_columns((2))
 		rule_option = option1.selectbox(label='Select Line Aggregation', 
 										options=['Mean', 'Median', 'Maximum', 'Minimum'], 
@@ -649,30 +659,54 @@ def main():
 			altA = (annual + pointsA + linesA + rule + bandA).interactive(bind_y=False)
 
 		st.altair_chart(altA, use_container_width=True)
+		st.markdown('<center>Figure 2. Mean NDVI Time-series over the AOI for imagery at every available date</center><br>', unsafe_allow_html=True)
 		st.markdown(f"""
-			<p align="justify">Figure 2 shows a time-series that plots the average NDVI values over the ROI at each available image 
+			<p align="justify">Figure 2 shows a time-series that plots the average NDVI values over the AOI at each available image 
 			between the selected dates. We can observe that the maximum mean NDVI (i.e., <strong>{df.NDVI.max():.2f})</strong> is observed on 
 			<strong>{df.loc[df.NDVI.argmax(),'Timestamp'].strftime('%B %d, %Y')}</strong> while the minimum mean NDVI (i.e., 
 			<strong>{df.NDVI.min():.2f}</strong>) is observed on <strong>{df.loc[df.NDVI.argmin(),'Timestamp'].strftime('%B %d, %Y')}</strong>. A difference of
 			<strong>{df.NDVI.max()-df.NDVI.min():.2f}</strong>.</p>
 
-			<p align="justify">The dots correspond to average NDVI values over the ROI aggregated per year. Maximum NDVI over a year span (i.e., <strong>{df_annual.NDVI.max():.2f})</strong>
-			is observed on <strong>{df.loc[df_annual.NDVI.argmax(),'Timestamp'].strftime('%Y')}</strong>, while mimimum NDVI (i.e., <strong>{df_annual.NDVI.min():.2f})</strong>
-			is observed on <strong>{df.loc[df_annual.NDVI.argmin(),'Timestamp'].strftime('%Y')}</strong>.</p>
+			<p align="justify">The dots correspond to average NDVI values over the AOI aggregated per year. Maximum NDVI over a year span (i.e., <strong>{df_annual.NDVI.max():.2f})</strong>
+			is observed in <strong>{df.loc[df_annual.NDVI.argmax(),'Timestamp'].strftime('%Y')}</strong>, while minimum NDVI (i.e., <strong>{df_annual.NDVI.min():.2f})</strong>
+			is observed in <strong>{df.loc[df_annual.NDVI.argmin(),'Timestamp'].strftime('%Y')}</strong>.</p>
 
-			<p align="justify">The red line corresponds to the average NDVI over the ROI across the selected dates.</p>
+			<p align="justify">The red line corresponds to the average NDVI over the AOI and DOI.</p>		
+			<p align="justify">Upon ticking the checkbox, the plot now shows the standardized values of tne NDVI time series setting the mean of the series to zero with a
+			standard deviation equal to 1.</p>
 			""", unsafe_allow_html=True)
+		
+		# adf = adfuller(df['NDVI'])
+		# 'Since the critical value is less than all of the t-statistics, we can reject the null hypothesis. The series is stationary. We can perform forecasting'
+		# if adf[0] <= adf[4]['1%'] and adf[0] <= adf[4]['5%'] and adf[0] <= adf[4]['10%']:
+		# 	hypothesis = ['', '']
+		# else:
+		# 	hypothesis = ['not', 'non-']
+			
+		# hypothesis = f'Since the critical value is {hypothesis[0]} less than all of the t-statistics, we can{hypothesis[0]} reject the null hypothesis.\
+		# 	The series is {hypothesis[1]}stationary. We can{hypothesis[0]} perform forecasting.'
+		
+		# with st.beta_expander('Check if we can forecast', expanded=True):
+		# 	st.markdown(f"""<p align="justify"><strong>Test for stationarity using the Augmented Dickey Fuller Test</strong>
+		# 	<ul>
+		# 	<li>Critical value: {adf[0]:.2e}</li>
+		# 	<li>p-value: {adf[1]:.2e}</li>
+		# 	<li>t-statistics: {adf[4]['1%']:.2e} (1%), {adf[4]['5%']:.2e} (5%), {adf[4]['10%']:.2e} (10%)</li>
+		# 	</ul>
+		# 	{hypothesis}</p>
+		# 		""", unsafe_allow_html=True)
 
-		st.markdown('Figure 3. Smoothed Trend of Mean NDVI Time-series')
 		st.altair_chart(altAA, use_container_width=True)
+		st.markdown('<center>Figure 3. Smoothed Trend of Mean NDVI Time-series</center><br>', unsafe_allow_html=True)
 		st.markdown(f"""
-			<p align="justify">Figure 3 shows a smoothed version of the time-series plot that lessen the variations between time steps, 
-			remove noise and easily visualize the underlying trend. Given this, we can observe that the red line which corresponds to
+			<p align="justify">Figure 3 shows a smoothed version of the time-series plot that lessens the variations between time steps, 
+			removes noise and easily visualizes the underlying trend. Given this, we can observe that the red line which corresponds to
 			the best-fit line of the series is <strong>trending {trending}</strong>.</p>
 			""", unsafe_allow_html=True)
-		st.markdown('Figure 4. Variation in NDVI values per Day of Year (DOY)')
+		
 		st.altair_chart(altB, use_container_width=True)
-
+		st.markdown('<center>Figure 4. Variation in NDVI values per Day of Year (DOY)</center><br>', unsafe_allow_html=True)
+		
 		def q75(x):
 			return x.quantile(0.75)
 
@@ -728,13 +762,13 @@ def main():
 
 		st.markdown(f"""
 			<p align="justify">Figure 4 shows the median of mean NDVI, represented by the <font color="#5378A9">blue line</font> and the corresponding variation per day (i.e., Inter-quartile range)
-			across a year, represented a the <font color="#BFC9D5">light-blue band</font>.</p>
+			across a year, represented by the <font color="#BFC9D5">light-blue band</font>.</p>
 			
 			<p align="justify">The maximum NDVI (i.e., <strong>{doy_df.Median.max():.2f}</strong>) is measured on the <strong>{max_day}{max_str} day</strong>, while the minimum
 			NDVI (i.e., <strong>{doy_df.Median.min():.2f}</strong>) is measured on the <strong>{min_day}{min_str} day</strong> of the year.</p>
 
 			<p align="justify">The largest variation in NDVI values is observed on the <strong>{var_max_day}{var_max_str} day </strong>of the year, while the 
-			smallest variation is observed on <strong>{var_min_day}{var_min_str} day</strong>.</p>
+			smallest variation is observed on the <strong>{var_min_day}{var_min_str} day</strong>.</p>
 			""", unsafe_allow_html=True)
 
 		st.markdown('---')
@@ -743,69 +777,69 @@ def main():
 
 		export_as_pdf = st.sidebar.button("Generate Summary Report")
 
-		if export_as_pdf:
-			pdf = PDF()
-			hti = Html2Image()
-			pdf.alias_nb_pages()
-			pdf.add_page()
-			pdf.set_font('Times', '', 12)
-			pdf.cell(0, 10, f'Report Generated on {datetime.now().date()}', 0, 1)
+		# if export_as_pdf:
+			# pdf = PDF()
+			# hti = Html2Image()
+			# pdf.alias_nb_pages()
+			# pdf.add_page()
+			# pdf.set_font('Times', '', 12)
+			# pdf.cell(0, 10, f'Report Generated on {datetime.now().date()}', 0, 1)
 			
-			# save visualizations as png
-			altA.save('chart1.png')
-			altAA.save('chart1a.png')
-			(lineB + bandB).save('chart2.png')
-			altC.save('chart3.png')
+			# # save visualizations as png
+			# altA.save('chart1.png')
+			# altAA.save('chart1a.png')
+			# (lineB + bandB).save('chart2.png')
+			# altC.save('chart3.png')
 			
-			export_map = folium.Map(location=[lat, lon], zoom_start=14)
-			basemaps['Google Satellite Hybrid'].add_to(export_map)
-			# export_map.add_ee_layer(start_img.clip(aoi.geometry()), visParams, f'{startdate}_IMG')
-			# export_map.add_ee_layer(end_img.clip(aoi.geometry()), visParams, f'{enddate}_IMG')
-			export_map.add_ee_layer(diff_img.clip(aoi.geometry()), visParams_diff, '')
-			plugins.MiniMap().add_to(export_map)
-			export_map.save('map.html')
+			# export_map = folium.Map(location=[lat, lon], zoom_start=14)
+			# basemaps['Google Satellite Hybrid'].add_to(export_map)
+			# # export_map.add_ee_layer(start_img.clip(aoi.geometry()), visParams, f'{startdate}_IMG')
+			# # export_map.add_ee_layer(end_img.clip(aoi.geometry()), visParams, f'{enddate}_IMG')
+			# export_map.add_ee_layer(diff_img.clip(aoi.geometry()), visParams_diff, '')
+			# plugins.MiniMap().add_to(export_map)
+			# export_map.save('map.html')
 
-			hti.screenshot(html_file='map.html', save_as='map.png')
-			pdf.image('map.png', w=190, h=100)
-			pdf.ln(5)
-			headers = list(export_df.columns)
-			w, h = 37, 10
-			for header in headers:
-				if header is not headers[-1]:
-					pdf.cell(w=w, h=h, txt=header, border=1, ln=0, align='C')
-				else:
-					pdf.cell(w=w, h=h, txt=header, border=1, ln=1, align='C')
+			# hti.screenshot(html_file='map.html', save_as='map.png')
+			# pdf.image('map.png', w=190, h=100)
+			# pdf.ln(5)
+			# headers = list(export_df.columns)
+			# w, h = 37, 10
+			# for header in headers:
+			# 	if header is not headers[-1]:
+			# 		pdf.cell(w=w, h=h, txt=header, border=1, ln=0, align='C')
+			# 	else:
+			# 		pdf.cell(w=w, h=h, txt=header, border=1, ln=1, align='C')
 				
-			for row in range(export_df.shape[0]):
-				for col in headers:
-					if col is not headers[-1] and col is not headers[-2]:
-						try:
-							text = f'{export_df.loc[row, col]:,.2f}'
-						except:
-							text = str(export_df.loc[row, col])
-						pdf.cell(w=w, h=h, txt=text, border=1, ln=0, align='C')
-					elif col is headers[-2]:
-						text = f'{export_df.loc[row, col]:.2f}'
-						pdf.cell(w=w, h=h, txt=text, border=1, ln=0, align='C')
-					else:
-						pdf.cell(w=w, h=h, txt=export_df.loc[row, col], border=1, ln=1, align='C')
+			# for row in range(export_df.shape[0]):
+			# 	for col in headers:
+			# 		if col is not headers[-1] and col is not headers[-2]:
+			# 			try:
+			# 				text = f'{export_df.loc[row, col]:,.2f}'
+			# 			except:
+			# 				text = str(export_df.loc[row, col])
+			# 			pdf.cell(w=w, h=h, txt=text, border=1, ln=0, align='C')
+			# 		elif col is headers[-2]:
+			# 			text = f'{export_df.loc[row, col]:.2f}'
+			# 			pdf.cell(w=w, h=h, txt=text, border=1, ln=0, align='C')
+			# 		else:
+			# 			pdf.cell(w=w, h=h, txt=export_df.loc[row, col], border=1, ln=1, align='C')
 
-			pdf.ln(5)
-			pdf.image('chart1.png', w=190, h=100)
-			pdf.ln(5)
-			pdf.image('chart1a.png', w=190, h=100)
-			pdf.ln(5)
-			pdf.image('chart2.png', w=190, h=80)
-			pdf.ln(5)
-			pdf.image('chart3.png', w=190, h=80)
-			pdf.ln(5)
+			# pdf.ln(5)
+			# pdf.image('chart1.png', w=190, h=100)
+			# pdf.ln(5)
+			# pdf.image('chart1a.png', w=190, h=100)
+			# pdf.ln(5)
+			# pdf.image('chart2.png', w=190, h=80)
+			# pdf.ln(5)
+			# pdf.image('chart3.png', w=190, h=80)
+			# pdf.ln(5)
 			
-			html = create_download_link(pdf.output(dest="S").encode("latin-1"), f"Green Report")
+			# html = create_download_link(pdf.output(dest="S").encode("latin-1"), f"Green Report")
 
-			st.sidebar.markdown(html, unsafe_allow_html=True)
+			# st.sidebar.markdown(html, unsafe_allow_html=True)
 
-	elif navigation == 'Manual':
-		st.title('Manual')
+	elif navigation == 'Forest Cover':
+		st.title('Forest Cover Assessment App')
 
 	else:
 		st.title('Generate Report')
