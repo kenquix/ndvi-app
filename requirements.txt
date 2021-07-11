@@ -9,3 +9,4 @@ folium
 altair_saver
 fpdf
 html2image
+imageio
