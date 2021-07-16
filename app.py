@@ -26,8 +26,8 @@ from statsmodels.tsa.stattools import adfuller
 
 import folium
 from folium import plugins
-  
-st.set_page_config(page_title='Green App', page_icon='🌳')
+
+st.set_page_config(page_title='Vega M', page_icon='🌳')
 
 # Add custom basemaps to folium
 basemaps = {
@@ -82,35 +82,35 @@ def add_ee_layer(self, ee_object, vis_params, name):
             control = True
             ).add_to(self)
         # display ee.ImageCollection()
-        elif isinstance(ee_object, ee.imagecollection.ImageCollection):    
-            ee_object_new = ee_object.mosaic()
-            map_id_dict = ee.Image(ee_object_new).getMapId(vis_params)
-            folium.raster_layers.TileLayer(
-            tiles = map_id_dict['tile_fetcher'].url_format,
-            attr = 'Google Earth Engine',
-            name = name,
-            overlay = True,
-            control = True
-            ).add_to(self)
-        # display ee.Geometry()
-        elif isinstance(ee_object, ee.geometry.Geometry):    
-            folium.GeoJson(
-            data = ee_object.getInfo(),
-            name = name,
-            overlay = True,
-            control = True
-        ).add_to(self)
-        # display ee.FeatureCollection()
-        elif isinstance(ee_object, ee.featurecollection.FeatureCollection):  
-            ee_object_new = ee.Image().paint(ee_object, 0, 2)
-            map_id_dict = ee.Image(ee_object_new).getMapId(vis_params)
-            folium.raster_layers.TileLayer(
-            tiles = map_id_dict['tile_fetcher'].url_format,
-            attr = 'Google Earth Engine',
-            name = name,
-            overlay = True,
-            control = True
-        ).add_to(self)
+        # elif isinstance(ee_object, ee.imagecollection.ImageCollection):    
+        #     ee_object_new = ee_object.mosaic()
+        #     map_id_dict = ee.Image(ee_object_new).getMapId(vis_params)
+        #     folium.raster_layers.TileLayer(
+        #     tiles = map_id_dict['tile_fetcher'].url_format,
+        #     attr = 'Google Earth Engine',
+        #     name = name,
+        #     overlay = True,
+        #     control = True
+        #     ).add_to(self)
+        # # display ee.Geometry()
+        # elif isinstance(ee_object, ee.geometry.Geometry):    
+        #     folium.GeoJson(
+        #     data = ee_object.getInfo(),
+        #     name = name,
+        #     overlay = True,
+        #     control = True
+        # ).add_to(self)
+        # # display ee.FeatureCollection()
+        # elif isinstance(ee_object, ee.featurecollection.FeatureCollection):  
+        #     ee_object_new = ee.Image().paint(ee_object, 0, 2)
+        #     map_id_dict = ee.Image(ee_object_new).getMapId(vis_params)
+        #     folium.raster_layers.TileLayer(
+        #     tiles = map_id_dict['tile_fetcher'].url_format,
+        #     attr = 'Google Earth Engine',
+        #     name = name,
+        #     overlay = True,
+        #     control = True
+        # ).add_to(self)
     
     except:
         print("Could not display {}".format(name))
@@ -118,19 +118,67 @@ def add_ee_layer(self, ee_object, vis_params, name):
 # Add EE drawing method to folium.
 folium.Map.add_ee_layer = add_ee_layer
 
-@st.cache(ttl=60*60*1, allow_output_mutation=True, persist=True)
-def read_data(aoi):
-	l8 = ee.ImageCollection('LANDSAT/LC08/C01/T1_8DAY_NDVI').select('NDVI')
-	scale = 100
+@st.cache()
+def date_range(l8, aoi):
+	l8 = l8.select('NDVI')
+	scale=100
 
 	out_dir = os.path.join(os.getcwd(), 'assets')
+	if not os.path.exists(out_dir):
+		os.makedirs(out_dir)
 
+	out_stats = os.path.join(out_dir, 'date_range.csv')
+
+	geemap.zonal_statistics(l8, aoi, out_stats, statistics_type='MEAN', scale=scale)
+
+	df = pd.read_csv(out_stats)
+	df = pd.melt(df, id_vars=['system:index'])
+	df.variable = df.variable.apply(lambda x: x[:8])
+	df = df.rename(columns={'value':'NDVI', 'variable':'Timestamp', 'system:index':'Default'})
+
+	# df['DOY'] = pd.DatetimeIndex(df['Timestamp']).dayofyear
+	# df['Year'] = pd.DatetimeIndex(df['Timestamp']).year
+	# df['Month'] = pd.DatetimeIndex(df['Timestamp']).month
+	# df['Day'] = pd.DatetimeIndex(df['Timestamp']).day
+	df['Timestamp'] = pd.DatetimeIndex(df['Timestamp']).date
+
+	df.dropna(axis=0, inplace=True)
+	df.drop(columns=['Default'], inplace=True)
+
+	# df['NDVI_Lowess'] = lowess(df.NDVI.values, np.arange(len(df.NDVI.values)), frac=0.05)[:,1]
+
+	# end = (datetime(2000,1,1) + timedelta(df.shape[0]-1)).strftime('%Y-%m-%d')
+	# temp_index = pd.date_range(start='2000-01-01', end=end, freq='D')
+	# df = df.set_index(temp_index)
+	# decomposition = sm.tsa.seasonal_decompose(df.NDVI)
+	# df['Trend'] = decomposition.trend
+	# df['Seasonal'] = decomposition.seasonal
+	# df['Standard'] = (df.NDVI - df.NDVI.mean())/df.NDVI.std()
+	# df.reset_index(drop=True, inplace=True)
+
+	return df
+
+@st.cache(allow_output_mutation=True, suppress_st_warning=True)
+def read_img(l8, startdate, enddate, aoi):
+	datamask = ee.Image('UMD/hansen/global_forest_change_2015').select('datamask').eq(1)
+	start1 = startdate.strftime('%Y-%m-%d')
+	start2 = (startdate+timedelta(1)).strftime('%Y-%m-%d')
+	end1 = enddate.strftime('%Y-%m-%d')
+	end2 = (enddate+timedelta(1)).strftime('%Y-%m-%d')
+
+	area = aoi.geometry().area().getInfo()/10000
+
+	# l8 = ee.ImageCollection('LANDSAT/LC08/C01/T1_8DAY_NDVI')
+	scale=100
+
+	out_dir = os.path.join(os.getcwd(), 'assets')
 	if not os.path.exists(out_dir):
 		os.makedirs(out_dir)
 
 	out_stats = os.path.join(out_dir, 'ndvi_stats.csv')
 
-	geemap.zonal_statistics(l8, aoi, out_stats, statistics_type='MEAN', scale=scale)
+	col = l8.select('NDVI').filterDate(start1, end1)
+	geemap.zonal_statistics(col, aoi, out_stats, statistics_type='MEAN', scale=scale)
 
 	df = pd.read_csv(out_stats)
 	df = pd.melt(df, id_vars=['system:index'])
@@ -156,20 +204,6 @@ def read_data(aoi):
 	df['Seasonal'] = decomposition.seasonal
 	df['Standard'] = (df.NDVI - df.NDVI.mean())/df.NDVI.std()
 	df.reset_index(drop=True, inplace=True)
-
-	return df
-
-@st.cache(ttl=60*60*1, allow_output_mutation=True, suppress_st_warning=True)
-def read_img(startdate, enddate, aoi):
-	start1 = startdate.strftime('%Y-%m-%d')
-	start2 = (startdate+timedelta(1)).strftime('%Y-%m-%d')
-	end1 = enddate.strftime('%Y-%m-%d')
-	end2 = (enddate+timedelta(1)).strftime('%Y-%m-%d')
-
-	area = aoi.geometry().area().getInfo()/10000
-
-	l8 = ee.ImageCollection('LANDSAT/LC08/C01/T1_8DAY_NDVI')
-	scale=100
 
 	start_img = l8.select('NDVI').filterDate(start1, start2).first().unmask()
 	end_img = l8.select('NDVI').filterDate(end1, end2).first().unmask()
@@ -214,21 +248,21 @@ def read_img(startdate, enddate, aoi):
 
 	with np.errstate(divide='ignore', invalid='ignore'):
 		perc_change = np.divide((end_bin - start_bin), start_bin)
-		perc_change[np.isnan(perc_change)] = 0
-		perc_change[np.isinf(perc_change)] = 0
+		# perc_change[np.isnan(perc_change)] = 0
+		perc_change[np.isinf(perc_change)] = np.nan
 
-	interpretation = ['Increase' if i > 0 else 'No change' if  i == 0 else 'Decrease' for i in list(perc_change)]
+	interpretation = ['Increase' if i > 0 else 'Decrease' if  i < 0 else 'No change' if  i == 0 else 'Increase' for i in list(perc_change)]
 
-	df = pd.DataFrame({f'Area ({startdate})': start_bin_norm*area, 
+	tabular_df = pd.DataFrame({f'Area ({startdate})': start_bin_norm*area, 
 			f'Area ({enddate})': end_bin_norm*area,
 			'%Change': perc_change*100, 'Interpretation': interpretation}, index=classes)
 
-	report_df = df.copy()
+	# report_df = df.copy()
 	
-	df.reset_index(inplace=True)
-	df = df.rename(columns={'index':'NDVI Class'})
+	# df.reset_index(inplace=True)
+	# df = df.rename(columns={'index':'NDVI Class'})
 
-	return df, report_df, start_img, end_img, diff_img, diff_bin_norm, hist_df
+	return df, tabular_df, start_img.updateMask(datamask), end_img.updateMask(datamask), diff_img.updateMask(datamask), diff_bin_norm, hist_df
 
 def transform(df):
 	dfm = df.copy()
@@ -250,7 +284,7 @@ class PDF(FPDF):
         # Move to the right
         self.cell(80)
         # Title
-        self.cell(30, 10, 'Vegetation Health Assessment Report', 0, 0, 'C')
+        self.cell(30, 10, 'Vegetation Assessment and Monitoring Report', 0, 0, 'C')
         # Line break
         self.ln(20)
 
@@ -269,10 +303,10 @@ def main():
 	st.sidebar.subheader('Customization Panel')
 	navigation = st.sidebar.selectbox('Navigation', ['Home', 'Manual'])
 	if navigation == 'Home':
-		st.title('Vegetation Monitoring App')
+		st.title('Vegetation Assessment and Monitoring App')
 		with st.beta_expander('About the app', expanded=True):
 			st.markdown(f"""
-				<p align="justify">The web app aims to provide helpful information that can aid in efforts to protect our forest
+				<p align="justify">Vegetation Assessment and Monitoring App (Vega Map) aims to provide helpful information that can aid in efforts to protect our forest
 				ecosystem. It utilizes the <a href="https://developers.google.com/earth-engine/datasets/catalog/LANDSAT_LC08_C01_T1_8DAY_NDVI">Landsat 8 Collection 1 Tier 1</a> 
 				8-Day Normalized Difference Vegetation Index (NDVI) composite at 30-meter resolution to provide 
 				an overview of vegetation health of an area from 2013 - present.</p>
@@ -341,18 +375,16 @@ def main():
 			except:
 				st.error(f'Error: Expected a different input. Make sure you selected the GEOJSON format.')
 				return
-
+			l8 = ee.ImageCollection('LANDSAT/LC08/C01/T1_8DAY_NDVI')
 			aoi = ee.FeatureCollection(ee.Geometry.Polygon(data))
 			
-			df = read_data(aoi)
-			df_annual = transform(df)
-
 			lon, lat = aoi.geometry().centroid().getInfo()['coordinates']
 			
 			st.markdown(f"""
 				Area of AOI is **{aoi.geometry().area().getInfo()/10000:,.02f} has**. The centroid is 
 				located at **({lat:.02f} N, {lon:.02f} E)**.
 				""")
+		
 		with st.beta_container():		
 			# st.markdown('---')
 			st.subheader('B. Map Visualization')
@@ -363,21 +395,24 @@ def main():
 			4. Generate timelapse of Annual Landsat composites (Convert to NDVI)
 			""", unsafe_allow_html=True)
 
+			date_list = date_range(l8, aoi)
+
 			startdate, enddate = st.select_slider('DOI Slider', 
-				df.Timestamp.unique().tolist(), 
-				value=[df.Timestamp.unique().tolist()[0], df.Timestamp.unique().tolist()[-1]],
+				date_list.Timestamp.unique().tolist(), 
+				value=[date_list.Timestamp.unique().tolist()[0], date_list.Timestamp.unique().tolist()[-1]],
 				help="Use the slider to select the DOI's (start and end date)")
 
 			startdate_format = startdate.strftime('%B %d, %Y')
 			enddate_format = enddate.strftime('%B %d, %Y')
 
-			df = df[(df.Timestamp >= startdate) & (df.Timestamp <= enddate)]
+			# df = df[(df.Timestamp >= startdate) & (df.Timestamp <= enddate)]
+
+			df, report_df, start_img, end_img, diff_img, diff_bin_norm, hist_df = read_img(l8, startdate, enddate, aoi)
 			df['Timestamp'] = pd.to_datetime(df.Timestamp)
-			
-			export_df, report_df, start_img, end_img, diff_img, diff_bin_norm, hist_df = read_img(startdate, enddate, aoi)
-				
+			df_annual = transform(df)
+							
 			visParams = {
-				'bands': ['NDVI'],
+				# 'bands': ['NDVI'],
 				'min': 0,
 				'max': 1,
 					'palette': [
@@ -389,7 +424,7 @@ def main():
 				}
 
 			visParams_diff = {
-				'bands': ['NDVI'],
+				# 'bands': ['NDVI'],
 				'min': -1,
 				'max': 1,
 					'palette': [
@@ -402,7 +437,7 @@ def main():
 			my_map = folium.Map(location=[lat, lon], zoom_start=12)
 
 			# Add custom basemaps
-			basemaps['Google Maps'].add_to(my_map)
+			# basemaps['Google Maps'].add_to(my_map)
 			basemaps['Google Satellite Hybrid'].add_to(my_map)
 
 			my_map.add_ee_layer(start_img.clip(aoi.geometry()), visParams, f'{startdate}_IMG')
@@ -420,7 +455,7 @@ def main():
 			folium_static(my_map)
 			
 			# st.markdown('<br>', unsafe_allow_html=True)	
-			with st.beta_expander('Timelapse of NDVI Composite Images', expanded=True):
+			with st.beta_expander('Timelapse of Annual NDVI Composite Images'):
 				timelapse = st.checkbox('Check to generate the animation.')
 				
 				if timelapse:
@@ -429,54 +464,83 @@ def main():
 					if not os.path.exists(out_dir):
 						os.makedirs(out_dir)
 
-					out_gif = os.path.join(out_dir, 'landsat_ts.gif')
+					# out_gif = os.path.join(out_dir, 'landsat_ndvi_ts.gif')
 
-					s1 = startdate.strftime('%Y-%m-%d')
-					d1 = enddate.strftime('%Y-%m-%d')
+					# add bands for DOY and Year
+					def add_doy(img):
+						doy = ee.Date(img.get('system:time_start')).getRelative('day', 'year')
+						return img.set('doy', doy)
+					
+					def add_year(img):
+						year = ee.Date(img.get('system:time_start')).get('year')
+						return img.set('year', year)
+					
+					l8 = l8.map(add_doy)
+					l8 = l8.map(add_year)
 
-					band_options = {'Color Infrared (Vegetation)': ['NIR', 'Red', 'Green'],
-								'False Color': ['SWIR2', 'SWIR1', 'Red'],
-								'Natural Color': ["Red", "Green", 'Blue'],
-								'Agriculture': ['SWIR1', 'NIR', 'Blue'],
-								'Healthy Vegetation': ['NIR', 'SWIR1', 'Blue'],
-								'Land/Water': ['NIR', 'SWIR1', 'Red'],
-								'Natural with Atmospheric Removal': ['SWIR2', 'NIR', 'Green'],
-								'Shortwave Infrared': ['SWIR2', 'NIR', 'Green'],
-								'Vegetation Analysis': ['SWIR1', 'NIR', 'Red']}
+					filenames = []
+					images = []
+					region = aoi.geometry().bounds()
 
-					ts_bands = st.selectbox('Select bands to visualize', list(band_options.keys()),
-											help="""Color Infrared (Vegetation), ['NIR', 'Red', 'Green']\
-													False Color, ['SWIR2', 'SWIR1', 'Red']\
-													Natural Color, ['Red', 'Green', 'Blue']\
-													Agriculture, ['SWIR1', 'NIR', 'Blue']\
-													Healthy Vegetation, ['NIR', 'SWIR1', 'Blue']\
-													Land/Water, ['NIR', 'SWIR1', 'Red']\
-													Natural with Atmospheric Removal, ['SWIR2', 'NIR', 'Green']\
-													Shortwave Infrared, ['SWIR2', 'NIR', 'Green']\
-													Vegetation Analysis, ['SWIR1', 'NIR', 'Red']
-											""")
+					for i in range(startdate.year, enddate.year + 1):
+						fcol = l8.filterMetadata('year', 'equals', i).reduce(ee.Reducer.median()).clip(aoi).updateMask(ee.Image('UMD/hansen/global_forest_change_2015').select('datamask').eq(1))
+						geemap.get_image_thumbnail(fcol, f'./assets/landsat_{i}.png', visParams, region=region, dimensions=500, format='png')
+						img = Image.open(f'./assets/landsat_{i}.png')
+						draw = ImageDraw.Draw(img)
+						draw.text((0,0), f'Year {i}')
+						img.save(f'./assets/landsat_{i}.png')
+						filenames.append(f'./assets/landsat_{i}.png')
 
-					Map.add_landsat_ts_gif(
-						layer_name="Timelapse",
-						roi=aoi.geometry(),
-						# label='Timelapse',
-						start_year=startdate.year,
-						end_year=enddate.year,
-						start_date=s1[5:],
-						end_date=d1[5:],
-						bands=band_options[ts_bands],
-						vis_params=None,
-						dimensions=650,
-						frames_per_second=.5,
-						font_size=30,
-						font_color="white",
-						add_progress_bar=True,
-						progress_bar_color="cyan",
-						progress_bar_height=5,
-						out_gif=out_gif,
-						download=True)
+					for filename in filenames:
+						images.append(imageio.imread(filename))
+					
+					imageio.mimsave('./assets/landsat_ndvi_ts.gif', images, fps=1)
+					# s1 = startdate.strftime('%Y-%m-%d')
+					# d1 = enddate.strftime('%Y-%m-%d')
 
-					file_ = open(out_gif, "rb")
+					# band_options = {'Color Infrared (Vegetation)': ['NIR', 'Red', 'Green'],
+					# 			'False Color': ['SWIR2', 'SWIR1', 'Red'],
+					# 			'Natural Color': ["Red", "Green", 'Blue'],
+					# 			'Agriculture': ['SWIR1', 'NIR', 'Blue'],
+					# 			'Healthy Vegetation': ['NIR', 'SWIR1', 'Blue'],
+					# 			'Land/Water': ['NIR', 'SWIR1', 'Red'],
+					# 			'Natural with Atmospheric Removal': ['SWIR2', 'NIR', 'Green'],
+					# 			'Shortwave Infrared': ['SWIR2', 'NIR', 'Green'],
+					# 			'Vegetation Analysis': ['SWIR1', 'NIR', 'Red']}
+
+					# ts_bands = st.selectbox('Select bands to visualize', list(band_options.keys()),
+					# 						help="""Color Infrared (Vegetation), ['NIR', 'Red', 'Green']\
+					# 								False Color, ['SWIR2', 'SWIR1', 'Red']\
+					# 								Natural Color, ['Red', 'Green', 'Blue']\
+					# 								Agriculture, ['SWIR1', 'NIR', 'Blue']\
+					# 								Healthy Vegetation, ['NIR', 'SWIR1', 'Blue']\
+					# 								Land/Water, ['NIR', 'SWIR1', 'Red']\
+					# 								Natural with Atmospheric Removal, ['SWIR2', 'NIR', 'Green']\
+					# 								Shortwave Infrared, ['SWIR2', 'NIR', 'Green']\
+					# 								Vegetation Analysis, ['SWIR1', 'NIR', 'Red']
+					# 						""")
+
+					# Map.add_landsat_ts_gif(
+					# 	layer_name="Timelapse",
+					# 	roi=aoi.geometry(),
+					# 	# label='Timelapse',
+					# 	start_year=startdate.year,
+					# 	end_year=enddate.year,
+					# 	start_date=s1[5:],
+					# 	end_date=d1[5:],
+					# 	bands=band_options[ts_bands],
+					# 	vis_params=None,
+					# 	dimensions=650,
+					# 	frames_per_second=.5,
+					# 	font_size=30,
+					# 	font_color="white",
+					# 	add_progress_bar=True,
+					# 	progress_bar_color="cyan",
+					# 	progress_bar_height=5,
+					# 	out_gif=out_gif,
+					# 	download=True)
+
+					file_ = open('./assets/landsat_ndvi_ts.gif', "rb")
 					contents = file_.read()
 					data_url = base64.b64encode(contents).decode("utf-8")
 					file_.close()
@@ -560,7 +624,7 @@ def main():
 
 		st.write(' ')
 		st.info(f"""Overall, mean NDVI for the *selected AOI* and *dates* is **{mean_ndvi:0.3f}** and is **trending {trending}!** 📈 and \
-					the area where a **positive NDVI change** is observed is at **{positive_change:0.2%}**!
+					the areas where a **positive NDVI change** is observed is at **{positive_change:0.2%}**!
 					\nSelected dates: **{startdate_format} - {enddate_format}**   
 					Number of days between selected dates: **{(enddate - startdate).days:,} days**    
 					Number of images available between the selected dates: **{df.shape[0]}**   
@@ -847,7 +911,7 @@ def main():
 	# remove 'Made with Streamlit' footer
 	hide_streamlit_style = """
 				<style>
-				#MainMenu {visibility: hidden;}
+				MainMenu {visibility: hidden;}
 				footer {visibility: hidden;}
 				</style>
 				"""
