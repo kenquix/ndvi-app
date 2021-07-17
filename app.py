@@ -29,6 +29,15 @@ from folium import plugins
 
 st.set_page_config(page_title='Vega M', page_icon='🌳')
 
+# remove 'Made with Streamlit' footer 			MainMenu {visibility: hidden;}
+hide_streamlit_style = """
+			<style>
+
+			footer {visibility: hidden;}
+			</style>
+			"""
+st.markdown(hide_streamlit_style, unsafe_allow_html=True) 
+
 # Add custom basemaps to folium
 basemaps = {
     'Google Maps': folium.TileLayer(
@@ -121,7 +130,7 @@ folium.Map.add_ee_layer = add_ee_layer
 @st.cache()
 def date_range(l8, aoi):
 	l8 = l8.select('NDVI')
-	scale=100
+	scale=10000
 
 	out_dir = os.path.join(os.getcwd(), 'assets')
 	if not os.path.exists(out_dir):
@@ -159,8 +168,7 @@ def date_range(l8, aoi):
 	return df
 
 @st.cache(allow_output_mutation=True, suppress_st_warning=True)
-def read_img(l8, startdate, enddate, aoi):
-	datamask = ee.Image('UMD/hansen/global_forest_change_2015').select('datamask').eq(1)
+def read_data(l8, startdate, enddate, aoi, datamask):
 	start1 = startdate.strftime('%Y-%m-%d')
 	start2 = (startdate+timedelta(1)).strftime('%Y-%m-%d')
 	end1 = enddate.strftime('%Y-%m-%d')
@@ -170,40 +178,6 @@ def read_img(l8, startdate, enddate, aoi):
 
 	# l8 = ee.ImageCollection('LANDSAT/LC08/C01/T1_8DAY_NDVI')
 	scale=100
-
-	out_dir = os.path.join(os.getcwd(), 'assets')
-	if not os.path.exists(out_dir):
-		os.makedirs(out_dir)
-
-	out_stats = os.path.join(out_dir, 'ndvi_stats.csv')
-
-	col = l8.select('NDVI').filterDate(start1, end1)
-	geemap.zonal_statistics(col, aoi, out_stats, statistics_type='MEAN', scale=scale)
-
-	df = pd.read_csv(out_stats)
-	df = pd.melt(df, id_vars=['system:index'])
-	df.variable = df.variable.apply(lambda x: x[:8])
-	df = df.rename(columns={'value':'NDVI', 'variable':'Timestamp', 'system:index':'Default'})
-
-	df['DOY'] = pd.DatetimeIndex(df['Timestamp']).dayofyear
-	df['Year'] = pd.DatetimeIndex(df['Timestamp']).year
-	df['Month'] = pd.DatetimeIndex(df['Timestamp']).month
-	df['Day'] = pd.DatetimeIndex(df['Timestamp']).day
-	df['Timestamp'] = pd.DatetimeIndex(df['Timestamp']).date
-
-	df.dropna(axis=0, inplace=True)
-	df.drop(columns=['Default'], inplace=True)
-
-	df['NDVI_Lowess'] = lowess(df.NDVI.values, np.arange(len(df.NDVI.values)), frac=0.05)[:,1]
-
-	end = (datetime(2000,1,1) + timedelta(df.shape[0]-1)).strftime('%Y-%m-%d')
-	temp_index = pd.date_range(start='2000-01-01', end=end, freq='D')
-	df = df.set_index(temp_index)
-	decomposition = sm.tsa.seasonal_decompose(df.NDVI)
-	df['Trend'] = decomposition.trend
-	df['Seasonal'] = decomposition.seasonal
-	df['Standard'] = (df.NDVI - df.NDVI.mean())/df.NDVI.std()
-	df.reset_index(drop=True, inplace=True)
 
 	start_img = l8.select('NDVI').filterDate(start1, start2).first().unmask()
 	end_img = l8.select('NDVI').filterDate(end1, end2).first().unmask()
@@ -256,6 +230,40 @@ def read_img(l8, startdate, enddate, aoi):
 	tabular_df = pd.DataFrame({f'Area ({startdate})': start_bin_norm*area, 
 			f'Area ({enddate})': end_bin_norm*area,
 			'%Change': perc_change*100, 'Interpretation': interpretation}, index=classes)
+
+	out_dir = os.path.join(os.getcwd(), 'assets')
+	if not os.path.exists(out_dir):
+		os.makedirs(out_dir)
+
+	out_stats = os.path.join(out_dir, 'ndvi_stats.csv')
+
+	col = l8.select('NDVI').filterDate(start1, end1)
+	geemap.zonal_statistics(col, aoi, out_stats, statistics_type='MEAN', scale=scale)
+
+	df = pd.read_csv(out_stats)
+	df = pd.melt(df, id_vars=['system:index'])
+	df.variable = df.variable.apply(lambda x: x[:8])
+	df = df.rename(columns={'value':'NDVI', 'variable':'Timestamp', 'system:index':'Default'})
+
+	df['DOY'] = pd.DatetimeIndex(df['Timestamp']).dayofyear
+	df['Year'] = pd.DatetimeIndex(df['Timestamp']).year
+	df['Month'] = pd.DatetimeIndex(df['Timestamp']).month
+	df['Day'] = pd.DatetimeIndex(df['Timestamp']).day
+	df['Timestamp'] = pd.DatetimeIndex(df['Timestamp']).date
+
+	df.dropna(axis=0, inplace=True)
+	df.drop(columns=['Default'], inplace=True)
+
+	df['NDVI_Lowess'] = lowess(df.NDVI.values, np.arange(len(df.NDVI.values)), frac=0.05)[:,1]
+
+	end = (datetime(2000,1,1) + timedelta(df.shape[0]-1)).strftime('%Y-%m-%d')
+	temp_index = pd.date_range(start='2000-01-01', end=end, freq='D')
+	df = df.set_index(temp_index)
+	decomposition = sm.tsa.seasonal_decompose(df.NDVI)
+	df['Trend'] = decomposition.trend
+	df['Seasonal'] = decomposition.seasonal
+	df['Standard'] = (df.NDVI - df.NDVI.mean())/df.NDVI.std()
+	df.reset_index(drop=True, inplace=True)
 
 	# report_df = df.copy()
 	
@@ -377,7 +385,7 @@ def main():
 				return
 			l8 = ee.ImageCollection('LANDSAT/LC08/C01/T1_8DAY_NDVI')
 			aoi = ee.FeatureCollection(ee.Geometry.Polygon(data))
-			
+			datamask = ee.Image('UMD/hansen/global_forest_change_2015').select('datamask').eq(1)
 			lon, lat = aoi.geometry().centroid().getInfo()['coordinates']
 			
 			st.markdown(f"""
@@ -407,7 +415,7 @@ def main():
 
 			# df = df[(df.Timestamp >= startdate) & (df.Timestamp <= enddate)]
 
-			df, report_df, start_img, end_img, diff_img, diff_bin_norm, hist_df = read_img(l8, startdate, enddate, aoi)
+			df, report_df, start_img, end_img, diff_img, diff_bin_norm, hist_df = read_data(l8, startdate, enddate, aoi, datamask)
 			df['Timestamp'] = pd.to_datetime(df.Timestamp)
 			df_annual = transform(df)
 							
@@ -483,7 +491,8 @@ def main():
 					region = aoi.geometry().bounds()
 
 					for i in range(startdate.year, enddate.year + 1):
-						fcol = l8.filterMetadata('year', 'equals', i).reduce(ee.Reducer.median()).clip(aoi).updateMask(ee.Image('UMD/hansen/global_forest_change_2015').select('datamask').eq(1))
+						
+						fcol = l8.filterMetadata('year', 'equals', i).reduce(ee.Reducer.median()).clip(aoi).updateMask(datamask)
 						geemap.get_image_thumbnail(fcol, f'./assets/landsat_{i}.png', visParams, region=region, dimensions=500, format='png')
 						img = Image.open(f'./assets/landsat_{i}.png')
 						draw = ImageDraw.Draw(img)
@@ -907,15 +916,6 @@ def main():
 
 	else:
 		st.title('Generate Report')
-		
-	# remove 'Made with Streamlit' footer
-	hide_streamlit_style = """
-				<style>
-				MainMenu {visibility: hidden;}
-				footer {visibility: hidden;}
-				</style>
-				"""
-	st.markdown(hide_streamlit_style, unsafe_allow_html=True) 
 	
 if __name__ == '__main__':
 	main()
