@@ -18,7 +18,7 @@ from fpdf import FPDF
 from datetime import timedelta, datetime
 
 import streamlit.components.v1 as components
-# from streamlit.uploaded_file_manager import UploadedFile
+from streamlit.uploaded_file_manager import UploadedFile
 from streamlit_folium import folium_static
 
 import statsmodels.api as sm
@@ -29,7 +29,7 @@ from statsmodels.nonparametric.smoothers_lowess import lowess
 import folium
 from folium import plugins
 
-st.set_page_config(page_title='Vega M', page_icon='🌳')
+st.set_page_config(page_title='Vega Map', page_icon='🌳')
 
 # remove 'Made with Streamlit' footer MainMenu {visibility: hidden;}
 hide_streamlit_style = """
@@ -346,10 +346,13 @@ def main():
 					data = json.loads(default_region)
 
 				elif inputFile is not None and len(inputRegion) == 0:
+					zip_dir = os.path.join(os.path.expanduser("~"), 'assets')
+					if not os.path.exists(zip_dir):
+						os.makedirs(zip_dir)
 					with zipfile.ZipFile(inputFile, 'r') as zip_ref:
-						zip_ref.extractall(r'./assets/')
+						zip_ref.extractall(zip_dir)
 					# files = [file for file in os.listdir(r'./assets') if file.endswith('.shp')]
-					region = geemap.shp_to_ee(os.path.join(os.path.expanduser("~"), 'assets', inputFile.name.split('.')[0]+'.shp'))
+					region = geemap.shp_to_ee(os.path.join(zip_dir, inputFile.name.split('.')[0]+'.shp'))
 					data = region.geometry().getInfo()['coordinates']
 
 				else:
