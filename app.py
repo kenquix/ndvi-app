@@ -349,7 +349,7 @@ def main():
 					with zipfile.ZipFile(inputFile, 'r') as zip_ref:
 						zip_ref.extractall(r'./assets/')
 					# files = [file for file in os.listdir(r'./assets') if file.endswith('.shp')]
-					region = geemap.shp_to_ee(os.path.join(os.getcwd(), 'assets', inputFile.name.split('.')[0]+'.shp'))
+					region = geemap.shp_to_ee(os.path.join(os.path.expanduser("~"), 'assets', inputFile.name.split('.')[0]+'.shp'))
 					data = region.geometry().getInfo()['coordinates']
 
 				else:
