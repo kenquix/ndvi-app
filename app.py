@@ -4,38 +4,40 @@ import json
 import base64
 import geemap
 import imageio
+import zipfile
 from PIL import Image
-from PIL import ImageFont
-from PIL import ImageDraw 
+# from PIL import ImageFont
+# from PIL import ImageDraw 
 import streamlit as st
 
 import pandas as pd
 import numpy as np
 import altair as alt
 from fpdf import FPDF
-from html2image import Html2Image
+# from html2image import Html2Image
 from datetime import timedelta, datetime
 
 import streamlit.components.v1 as components
+# from streamlit.uploaded_file_manager import UploadedFile
 from streamlit_folium import folium_static
 
 import statsmodels.api as sm
 
 from statsmodels.nonparametric.smoothers_lowess import lowess
-from statsmodels.tsa.stattools import adfuller
+# from statsmodels.tsa.stattools import adfuller
 
 import folium
 from folium import plugins
 
 st.set_page_config(page_title='Vega M', page_icon='🌳')
 
-# remove 'Made with Streamlit' footer 			MainMenu {visibility: hidden;}
+# remove 'Made with Streamlit' footer MainMenu {visibility: hidden;}
 hide_streamlit_style = """
 			<style>
-
 			footer {visibility: hidden;}
 			</style>
 			"""
+
 st.markdown(hide_streamlit_style, unsafe_allow_html=True) 
 
 # Add custom basemaps to folium
@@ -127,46 +129,6 @@ def add_ee_layer(self, ee_object, vis_params, name):
 # Add EE drawing method to folium.
 folium.Map.add_ee_layer = add_ee_layer
 
-@st.cache()
-def date_range(l8, aoi):
-	l8 = l8.select('NDVI')
-	scale=10000
-
-	out_dir = os.path.join(os.getcwd(), 'assets')
-	if not os.path.exists(out_dir):
-		os.makedirs(out_dir)
-
-	out_stats = os.path.join(out_dir, 'date_range.csv')
-
-	geemap.zonal_statistics(l8, aoi, out_stats, statistics_type='MEAN', scale=scale)
-
-	df = pd.read_csv(out_stats)
-	df = pd.melt(df, id_vars=['system:index'])
-	df.variable = df.variable.apply(lambda x: x[:8])
-	df = df.rename(columns={'value':'NDVI', 'variable':'Timestamp', 'system:index':'Default'})
-
-	# df['DOY'] = pd.DatetimeIndex(df['Timestamp']).dayofyear
-	# df['Year'] = pd.DatetimeIndex(df['Timestamp']).year
-	# df['Month'] = pd.DatetimeIndex(df['Timestamp']).month
-	# df['Day'] = pd.DatetimeIndex(df['Timestamp']).day
-	df['Timestamp'] = pd.DatetimeIndex(df['Timestamp']).date
-
-	df.dropna(axis=0, inplace=True)
-	df.drop(columns=['Default'], inplace=True)
-
-	# df['NDVI_Lowess'] = lowess(df.NDVI.values, np.arange(len(df.NDVI.values)), frac=0.05)[:,1]
-
-	# end = (datetime(2000,1,1) + timedelta(df.shape[0]-1)).strftime('%Y-%m-%d')
-	# temp_index = pd.date_range(start='2000-01-01', end=end, freq='D')
-	# df = df.set_index(temp_index)
-	# decomposition = sm.tsa.seasonal_decompose(df.NDVI)
-	# df['Trend'] = decomposition.trend
-	# df['Seasonal'] = decomposition.seasonal
-	# df['Standard'] = (df.NDVI - df.NDVI.mean())/df.NDVI.std()
-	# df.reset_index(drop=True, inplace=True)
-
-	return df
-
 @st.cache(allow_output_mutation=True, suppress_st_warning=True)
 def read_data(l8, startdate, enddate, aoi, datamask):
 	start1 = startdate.strftime('%Y-%m-%d')
@@ -175,10 +137,7 @@ def read_data(l8, startdate, enddate, aoi, datamask):
 	end2 = (enddate+timedelta(1)).strftime('%Y-%m-%d')
 
 	area = aoi.geometry().area().getInfo()/10000
-
-	# l8 = ee.ImageCollection('LANDSAT/LC08/C01/T1_8DAY_NDVI')
-	scale=100
-
+	scale = 100
 	start_img = l8.select('NDVI').filterDate(start1, start2).first().unmask()
 	end_img = l8.select('NDVI').filterDate(end1, end2).first().unmask()
 	
@@ -265,12 +224,32 @@ def read_data(l8, startdate, enddate, aoi, datamask):
 	df['Standard'] = (df.NDVI - df.NDVI.mean())/df.NDVI.std()
 	df.reset_index(drop=True, inplace=True)
 
-	# report_df = df.copy()
-	
-	# df.reset_index(inplace=True)
-	# df = df.rename(columns={'index':'NDVI Class'})
-
 	return df, tabular_df, start_img.updateMask(datamask), end_img.updateMask(datamask), diff_img.updateMask(datamask), diff_bin_norm, hist_df
+
+@st.cache()
+def date_range(l8, aoi):
+	l8 = l8.select('NDVI')
+	scale=10000
+
+	out_dir = os.path.join(os.getcwd(), 'assets')
+	if not os.path.exists(out_dir):
+		os.makedirs(out_dir)
+
+	out_stats = os.path.join(out_dir, 'date_range.csv')
+
+	geemap.zonal_statistics(l8, aoi, out_stats, statistics_type='MEAN', scale=scale)
+
+	df = pd.read_csv(out_stats)
+	df = pd.melt(df, id_vars=['system:index'])
+	df.variable = df.variable.apply(lambda x: x[:8])
+	df = df.rename(columns={'value':'NDVI', 'variable':'Timestamp', 'system:index':'Default'})
+
+	df['Timestamp'] = pd.DatetimeIndex(df['Timestamp']).date
+
+	df.dropna(axis=0, inplace=True)
+	df.drop(columns=['Default'], inplace=True)
+
+	return df
 
 def transform(df):
 	dfm = df.copy()
@@ -283,30 +262,29 @@ def create_download_link(val, filename):
     b64 = base64.b64encode(val)  # val looks like b'...'
     return f'<a href="data:application/octet-stream;base64,{b64.decode()}" download="{filename}.pdf">Download file</a>'
 
-class PDF(FPDF):
-    def header(self):
-        # Logo
-        self.image(r'./assets/header.jpg', 10, 8, 33)
-        # Arial bold 15
-        self.set_font('Arial', 'B', 15)
-        # Move to the right
-        self.cell(80)
-        # Title
-        self.cell(30, 10, 'Vegetation Assessment and Monitoring Report', 0, 0, 'C')
-        # Line break
-        self.ln(20)
+# class PDF(FPDF):
+#     def header(self):
+#         # Logo
+#         self.image(r'./assets/header.jpg', 10, 8, 33)
+#         # Arial bold 15
+#         self.set_font('Arial', 'B', 15)
+#         # Move to the right
+#         self.cell(80)
+#         # Title
+#         self.cell(30, 10, 'Vegetation Assessment and Monitoring Report', 0, 0, 'C')
+#         # Line break
+#         self.ln(20)
 
-    # Page footer
-    def footer(self):
-        # Position at 1.5 cm from bottom
-        self.set_y(-15)
-        # Arial italic 8
-        self.set_font('Arial', 'I', 8)
-        # Page number
-        self.cell(0, 10, 'Page ' + str(self.page_no()) + '/{nb}', 0, 0, 'C')
+#     # Page footer
+#     def footer(self):
+#         # Position at 1.5 cm from bottom
+#         self.set_y(-15)
+#         # Arial italic 8
+#         self.set_font('Arial', 'I', 8)
+#         # Page number
+#         self.cell(0, 10, 'Page ' + str(self.page_no()) + '/{nb}', 0, 0, 'C')
 
 def main():
-	# st.write('Export maps and viz into reports, measure time for page to load, forecast, team members and references tab')
 	st.image(r'./assets/header.jpg')
 	st.sidebar.subheader('Customization Panel')
 	navigation = st.sidebar.selectbox('Navigation', ['Home', 'Manual'])
@@ -339,10 +317,9 @@ def main():
 			st.markdown(f"""
 				<p align="justify">Select an Area of Interest (AOI) by either <strong>(a) uploading a local file</strong> (*.shp format) or <strong>(b) drawing a bounding box</strong>.</p> 
 				""", unsafe_allow_html=True)	
-			inputFile = st.file_uploader('a. Upload a file', type=['shp'],
-									help='Currently, only shapefile format AOI is accepted')
+			inputFile = st.file_uploader('a. Upload a file', type=['zip'],
+									help='Currently, only compressed file (*.zip) of the SHP AOI is accepted')
 			st.markdown('<p style="font-size:13px">b. Draw a bounding box</p>', unsafe_allow_html=True)
-			# st.markdown('<br>', unsafe_allow_html=True)	
 			st.markdown(f"""
 				<ul>
 				<li>Click OK to accept cookies.</li>
@@ -366,12 +343,12 @@ def main():
 				
 			try:
 				if inputFile is None and len(inputRegion)==0:
-					# region = geemap.shp_to_geojson(r'./assets/butuan_city_gcs.shp')
-					# data = region['features'][0]['geometry']['coordinates']
 					data = json.loads(default_region)
 
-				elif inputFile and len(inputRegion) == 0:
-					region = geemap.shp_to_ee(os.path.join(os.getcwd(),'assets',inputFile.name))
+				elif inputFile is not None and len(inputRegion) == 0:
+					with zipfile.ZipFile(inputFile, 'r') as zip_ref:
+						zip_ref.extractall(r'./assets/')
+					region = geemap.shp_to_ee(os.path.join(os.getcwd(), 'assets', inputFile.name.split('.')[0]+'.shp'))
 					data = region.geometry().getInfo()['coordinates']
 
 				else:
@@ -848,7 +825,7 @@ def main():
 		with st.beta_expander('Discussion board.', expanded=True):
 			components.iframe('https://padlet.com/kaquisado/v9y0rhx2lrf0tilk', height=500)
 
-		export_as_pdf = st.sidebar.button("Generate Summary Report")
+		# export_as_pdf = st.sidebar.button("Generate Summary Report")
 
 		# if export_as_pdf:
 			# pdf = PDF()
