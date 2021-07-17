@@ -286,7 +286,7 @@ def create_download_link(val, filename):
 
 def main():
 	st.image(r'./assets/header.jpg')
-	st.sidebar.subheader('Customization Panel')
+	# st.sidebar.subheader('Navigation Panel')
 	navigation = st.sidebar.selectbox('Navigation', ['Home', 'Manual'])
 	if navigation == 'Home':
 		st.title('Vegetation Assessment and Monitoring App')
@@ -318,7 +318,7 @@ def main():
 				<p align="justify">Select an Area of Interest (AOI) by either <strong>(a) uploading a local file</strong> (*.shp format) or <strong>(b) drawing a bounding box</strong>.</p> 
 				""", unsafe_allow_html=True)	
 			inputFile = st.file_uploader('a. Upload a file', type=['zip'],
-									help='Currently, only compressed file (*.zip) of the SHP AOI is accepted')
+									help='Currently, only compressed file (*.zip) of the SHP AOI is accepted. ')
 			st.markdown('<p style="font-size:13px">b. Draw a bounding box</p>', unsafe_allow_html=True)
 			st.markdown(f"""
 				<ul>
@@ -348,6 +348,7 @@ def main():
 				elif inputFile is not None and len(inputRegion) == 0:
 					with zipfile.ZipFile(inputFile, 'r') as zip_ref:
 						zip_ref.extractall(r'./assets/')
+					# files = [file for file in os.listdir(r'./assets') if file.endswith('.shp')]
 					region = geemap.shp_to_ee(os.path.join(os.getcwd(), 'assets', inputFile.name.split('.')[0]+'.shp'))
 					data = region.geometry().getInfo()['coordinates']
 
