@@ -10,3 +10,4 @@ altair_saver
 fpdf
 html2image
 imageio
+geopandas

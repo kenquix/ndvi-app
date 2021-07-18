@@ -4,10 +4,15 @@ import json
 import base64
 import geemap
 import imageio
-import zipfile
+# import zipfile
+import geopandas as gpd
+import shapely.wkt
+import shapely.geometry
+import ast
+import fiona
 from PIL import Image
 # from PIL import ImageFont
-# from PIL import ImageDraw 
+from PIL import ImageDraw 
 import streamlit as st
 
 import pandas as pd
@@ -317,8 +322,8 @@ def main():
 			st.markdown(f"""
 				<p align="justify">Select an Area of Interest (AOI) by either <strong>(a) uploading a local file</strong> (*.shp format) or <strong>(b) drawing a bounding box</strong>.</p> 
 				""", unsafe_allow_html=True)	
-			inputFile = st.file_uploader('a. Upload a file', type=['zip'],
-									help='Currently, only compressed file (*.zip) of the SHP AOI is accepted. ')
+			inputFile = st.file_uploader('a. Upload a file', type=['kml'],
+									help='Currently, only KML format AOI is accepted. ')
 			st.markdown('<p style="font-size:13px">b. Draw a bounding box</p>', unsafe_allow_html=True)
 			st.markdown(f"""
 				<ul>
@@ -340,20 +345,27 @@ def main():
 								[125.5990576681,8.9828386907],\
 								[125.4727148947,8.9828386907],\
 								[125.4727148947,8.9012996164]]]'
-				
+			zip_dir = os.path.join(os.path.expanduser("~"), 'assets')
+
 			try:
 				if inputFile is None and len(inputRegion)==0:
 					data = json.loads(default_region)
 
-				elif inputFile is not None and len(inputRegion) == 0:
-					zip_dir = os.path.join(os.path.expanduser("~"), 'assets')
-					if not os.path.exists(zip_dir):
-						os.makedirs(zip_dir)
-					with zipfile.ZipFile(inputFile, 'r') as zip_ref:
-						zip_ref.extractall(zip_dir)
+				elif inputFile is not None and len(inputRegion) == 0:	
+					gpd.io.file.fiona.drvsupport.supported_drivers['KML'] = 'rw'	
+					input_df = gpd.read_file(inputFile, driver='KML')
+					s = str(input_df.geometry.iloc[0])
+					g1 = shapely.wkt.loads(s)
+					g2 = shapely.geometry.mapping(g1)
+					g3 = json.dumps(g2)
+					# if not os.path.exists(zip_dir):
+					# 	os.makedirs(zip_dir)
+					# with zipfile.ZipFile(inputFile, 'r') as zip_ref:
+					# 	zip_ref.extractall(zip_dir)
 					# files = [file for file in os.listdir(r'./assets') if file.endswith('.shp')]
-					region = geemap.shp_to_ee(os.path.join(zip_dir, inputFile.name.split('.')[0]+'.shp'))
-					data = region.geometry().getInfo()['coordinates']
+					# region = geemap.kml_to_ee(inputFile)
+					data = ast.literal_eval(g3)['coordinates']
+					# data = region.geometry().getInfo()['coordinates']
 
 				else:
 					if inputRegion[:3] == '[[[':
@@ -364,6 +376,7 @@ def main():
 			except:
 				st.error(f'Error: Expected a different input. Make sure you selected the GEOJSON format.')
 				return
+
 			l8 = ee.ImageCollection('LANDSAT/LC08/C01/T1_8DAY_NDVI')
 			aoi = ee.FeatureCollection(ee.Geometry.Polygon(data))
 			datamask = ee.Image('UMD/hansen/global_forest_change_2015').select('datamask').eq(1)
@@ -448,7 +461,7 @@ def main():
 				timelapse = st.checkbox('Check to generate the animation.')
 				
 				if timelapse:
-					out_dir = os.path.join(os.getcwd(), 'assets')
+					out_dir = os.path.join(os.path.expanduser('~'), 'assets')
 
 					if not os.path.exists(out_dir):
 						os.makedirs(out_dir)
@@ -472,19 +485,19 @@ def main():
 					region = aoi.geometry().bounds()
 
 					for i in range(startdate.year, enddate.year + 1):
-						
+						timelapse_dir = os.path.join(zip_dir, f'landsat_{i}.png')
 						fcol = l8.filterMetadata('year', 'equals', i).reduce(ee.Reducer.median()).clip(aoi).updateMask(datamask)
-						geemap.get_image_thumbnail(fcol, f'./assets/landsat_{i}.png', visParams, region=region, dimensions=500, format='png')
-						img = Image.open(f'./assets/landsat_{i}.png')
+						geemap.get_image_thumbnail(fcol, timelapse_dir, visParams, region=region, dimensions=500, format='png')
+						img = Image.open(timelapse_dir)
 						draw = ImageDraw.Draw(img)
 						draw.text((0,0), f'Year {i}')
-						img.save(f'./assets/landsat_{i}.png')
-						filenames.append(f'./assets/landsat_{i}.png')
+						img.save(timelapse_dir)
+						filenames.append(timelapse_dir)
 
 					for filename in filenames:
 						images.append(imageio.imread(filename))
 					
-					imageio.mimsave('./assets/landsat_ndvi_ts.gif', images, fps=1)
+					imageio.mimsave(os.path.join(zip_dir, 'landsat_ndvi_ts.gif'), images, fps=1)
 					# s1 = startdate.strftime('%Y-%m-%d')
 					# d1 = enddate.strftime('%Y-%m-%d')
 
@@ -530,7 +543,7 @@ def main():
 					# 	out_gif=out_gif,
 					# 	download=True)
 
-					file_ = open('./assets/landsat_ndvi_ts.gif', "rb")
+					file_ = open(os.path.join(zip_dir, 'landsat_ndvi_ts.gif'), "rb")
 					contents = file_.read()
 					data_url = base64.b64encode(contents).decode("utf-8")
 					file_.close()
