@@ -34,6 +34,8 @@ from statsmodels.nonparametric.smoothers_lowess import lowess
 import folium
 from folium import plugins
 
+from keplergl import KeplerGl
+
 st.set_page_config(page_title='Vega Map', page_icon='🌳')
 
 # remove 'Made with Streamlit' footer MainMenu {visibility: hidden;}
@@ -290,37 +292,17 @@ def create_download_link(val, filename):
 #         self.cell(0, 10, 'Page ' + str(self.page_no()) + '/{nb}', 0, 0, 'C')
 
 def main():
-	st.image(r'./assets/header.jpg')
+	
 	# st.sidebar.subheader('Navigation Panel')
-	navigation = st.sidebar.selectbox('Navigation', ['Home', 'Manual'])
-	if navigation == 'Home':
+	nav1, _ = st.columns((2))
+	navigation = st.sidebar.radio('Navigation', ['The Challenge','The App Details', 'The Prototype', 'The Team', 'Discussion Board'], index=1)
+	if navigation == 'The Prototype':
+		st.image(r'./assets/header.jpg')
 		st.title('Vegetation Assessment and Monitoring App')
-		with st.beta_expander('About the app', expanded=True):
-			st.markdown(f"""
-				<p align="justify">Vegetation Assessment and Monitoring App (Vega Map) aims to provide helpful information that can aid in efforts to protect our forest
-				ecosystem. It utilizes the <a href="https://developers.google.com/earth-engine/datasets/catalog/LANDSAT_LC08_C01_T1_8DAY_NDVI">Landsat 8 Collection 1 Tier 1</a> 
-				8-Day Normalized Difference Vegetation Index (NDVI) composite at 30-meter resolution to provide 
-				an overview of vegetation health of an area from 2013 - present.</p>
-
-				<p align="justify"><a href="https://gisgeography.com/ndvi-normalized-difference-vegetation-index/">NDVI</a> is an indicator used to quantify vegetation health based on how the vegetation responds
-				light at the Near Infrared (NIR) and Red bands. NDVI ranges from -1.0 to +1.0.</p> 
-
-				<p align="justify">The NDVI values are classified into six (6) distinct classes:
-				<ul>
-				<li>Bare Soil and/or Water: -1 to 0 (exclusive)</li>
-				<li>Very Low Vegetation: 0 to 0.2 (exclusive)</li>
-				<li>Low Vegetation: 0.2 to 0.4 (exclusive)</li>
-				<li>Moderately Low Vegetation: 0.4 to 0.6 (exclusive)</li>
-				<li>Moderately High Vegetation: 0.6 to 0.8 (exclusive)</li>
-				<li>High Vegetation: 0.8 to 1.0 (inclusive)</li></ul></p>
-
-				<p align="justify"><em><font color="#85221A">Note: The information presented in this app serves as a guide only. Ground validation should still be conducted to verify its accuracy.</font></em></p> 
-				""", unsafe_allow_html=True)
-
 		st.subheader('A. Data Collection')
-		with st.beta_expander('', expanded=True):
+		with st.expander('', expanded=True):
 			st.markdown(f"""
-				<p align="justify">Select an Area of Interest (AOI) by either <strong>(a) uploading a local file</strong> (*.shp format) or <strong>(b) drawing a bounding box</strong>.</p> 
+				<p align="justify">Select an Area of Interest (AOI) by either <strong>(a) uploading a local file</strong> (*.KML format) or <strong>(b) drawing a bounding box</strong>.</p> 
 				""", unsafe_allow_html=True)	
 			inputFile = st.file_uploader('a. Upload a file', type=['kml'],
 									help='Currently, only KML format AOI is accepted. ')
@@ -334,7 +316,7 @@ def main():
 				the coordinates.</li><br>
 				""", unsafe_allow_html=True)
 			components.iframe('https://boundingbox.klokantech.com/', height=500)
-		
+
 			inputRegion = st.text_input(f'Paste AOI coordinates here and press Enter:', 
 									help='Currently, only GeoJSON formatted AOI is accepted')
 
@@ -387,7 +369,7 @@ def main():
 				located at **({lat:.02f} N, {lon:.02f} E)**.
 				""")
 		
-		with st.beta_container():		
+		with st.container():		
 			# st.markdown('---')
 			st.subheader('B. Map Visualization')
 			st.markdown(f"""
@@ -455,9 +437,11 @@ def main():
 			plugins.MiniMap().add_to(my_map)
 
 			folium_static(my_map)
-			
+
+			st.image(r'./assets/scale.png')
+
 			# st.markdown('<br>', unsafe_allow_html=True)	
-			with st.beta_expander('Timelapse of Annual NDVI Composite Images'):
+			with st.expander('Timelapse of Annual NDVI Composite Images'):
 				timelapse = st.checkbox('Check to generate the animation.')
 				
 				if timelapse:
@@ -574,7 +558,7 @@ def main():
 
 		linesC = baseC.mark_line().encode(
 			size=alt.condition(~highlightA, alt.value(1), alt.value(3)),
-			color=alt.Color('Year:O', scale=alt.Scale(scheme='viridis'), legend=None)
+			# color=alt.Color('Year:O', scale=alt.Scale(scheme='viridis'), legend=None)
 			)
 
 		regC = baseC.transform_regression('Timestamp', 'NDVI_Lowess').mark_line(color="#C32622").encode(
@@ -607,7 +591,7 @@ def main():
 			).mark_area( opacity=0.3, interpolate='step').encode(
 				x=alt.X('NDVI:Q', bin=alt.Bin(maxbins=200)),
 				y=alt.Y('count()', stack=None),
-				color=alt.Color('Dates:N', legend=None),
+				color=alt.Color('Dates:N', legend=alt.Legend(orient='top-left')),
 				tooltip=[alt.Tooltip('Dates:N', title='Date'),
 						alt.Tooltip('NDVI:Q', bin=alt.Bin(maxbins=100)),
 						alt.Tooltip('count()', title='Count')]
@@ -648,7 +632,7 @@ def main():
 			<font color="#A42F25"><strong>{', '.join(decrease_list)}</strong></font>.</p>
 			""", unsafe_allow_html=True)
 		st.markdown('---')
-		st.subheader('Exploratory Analysis')
+		st.subheader('D. Visual EDA')
 		st.altair_chart(altC, use_container_width=True)
 		st.markdown(f'<center>Figure 1. Distribution of NDVI values for images of selected dates</center><br>', unsafe_allow_html=True)
 
@@ -661,7 +645,7 @@ def main():
 			(inclusive).</p>
 			""", unsafe_allow_html=True)
 
-		option1, option2 = st.beta_columns((2))
+		option1, option2 = st.columns((2))
 		rule_option = option1.selectbox(label='Select Line Aggregation', 
 										options=['Mean', 'Median', 'Maximum', 'Minimum'], 
 										help='Defines the location of the horizontal red line along the y-axis')
@@ -678,7 +662,7 @@ def main():
 			x=alt.X('Timestamp:T'),
 			y=alt.Y('NDVI:Q'),
 			# opacity=opacity,
-			color=alt.Color('Year:O', scale=alt.Scale(scheme='viridis'), legend=None),
+			color=alt.Color('Year:O', scale=alt.Scale(scheme='viridis'), legend=alt.Legend(orient='bottom')),
 			tooltip=[
 				alt.Tooltip('NDVI:Q', title='Annual Mean', format=',.4f')
 			])
@@ -690,7 +674,8 @@ def main():
 				)
 
 			linesA = baseA.mark_bar().encode(
-				color=alt.Color('Standard:Q', scale=alt.Scale(scheme='redblue'), legend=None))
+				color=alt.Color('Standard:Q', scale=alt.Scale(scheme='redblue'), legend=None)
+				)
 			
 			rule = alt.Chart(df).mark_rule(color='red').encode(
 				y=alt.Y('mean(Standard):Q'),
@@ -713,7 +698,8 @@ def main():
 
 			linesA = baseA.mark_line().encode(
 				size=alt.condition(~highlightA, alt.value(1), alt.value(3)),
-				color=alt.Color('Year:O', scale=alt.Scale(scheme='viridis'), legend=None))
+				color=alt.Color('Year:O', scale=alt.Scale(scheme='viridis'), legend=None)
+				)
 
 			rule = alt.Chart(df).mark_rule(color='red').encode(
 				y=alt.Y(f'{rule_option_dict[rule_option]}(NDVI):Q'),
@@ -828,7 +814,8 @@ def main():
 			var_min_str = 'th'
 
 		st.markdown(f"""
-			<p align="justify">Figure 4 shows the median of mean NDVI, represented by the <font color="#5378A9">blue line</font> and the corresponding variation per day (i.e., Inter-quartile range)
+			<p align="justify">Figure 4 shows the median of mean NDVI, represented by the <font color="#5378A9">blue line</font> 
+			and the corresponding variation per day (i.e., Inter-quartile range)
 			across a year, represented by the <font color="#BFC9D5">light-blue band</font>.</p>
 			
 			<p align="justify">The maximum NDVI (i.e., <strong>{doy_df.Median.max():.2f}</strong>) is measured on the <strong>{max_day}{max_str} day</strong>, while the minimum
@@ -839,8 +826,6 @@ def main():
 			""", unsafe_allow_html=True)
 
 		st.markdown('---')
-		with st.beta_expander('Discussion board.', expanded=True):
-			components.iframe('https://padlet.com/kaquisado/v9y0rhx2lrf0tilk', height=500)
 
 		# export_as_pdf = st.sidebar.button("Generate Summary Report")
 
@@ -905,11 +890,142 @@ def main():
 
 			# st.sidebar.markdown(html, unsafe_allow_html=True)
 
-	elif navigation == 'Forest Cover':
-		st.title('Forest Cover Assessment App')
+	elif navigation == 'The Challenge':
+		st.markdown(f"""<h1><a href="https://sparta.dap.edu.ph/opendata/lgu/butuancity/challenges/butuancity-forest-ecosystem">Sparta Hackathon Challenge</a></h1>""", unsafe_allow_html=True)
+		st.markdown('---')
+		st.image(r'./assets/header.jpg')
+		st.markdown(f"""
+		<h4>Sector : Forest Ecosystem</h4>
+
+		<h4>Theme : Protecting and controlling forest ecosystem using data and technology</h4><br>
+
+		<p align="justify">Butuan City also known as the Timber City of the South enriches its potentials 
+		towards investing on the richness of its Forestland Ecosystem. As hampered by 
+		some illegal activities and exploitations, the City of Butuan recognizes the 
+		relevance of data in the development of technological innovations which can provide 
+		mechanisms in protecting forestland areas which have the capability to support 
+		the economic growth and resiliency of the city.  To bring its people to one venue 
+		for positive engagement and collaborative efforts, the City of Butuan invites ideas, 
+		project proposals, and technological innovations to address threatening factors in the 
+		protection and conservation of the Forestland ecosystem through hackathons. Datasets and 
+		other entries that will be collected in this challenge will be used in hackathons to 
+		create a pitch project for Butuan that will address their problem in the tourism sector.
+		 
+		<p align="justify"><em>*This challenge supports the following <a href="https://www.ph.undp.org/content/philippines/en/home/sustainable-development-goals2.html">UN SDGs</a> 
+		and <a href="https://www.un.org/securitycouncil/content/repertoire/thematic-items">Thematic issues.</a></p></em></p>
+		""", unsafe_allow_html=True)
+		
+		st.image(r'./assets/SDGs.png')
+
+	elif navigation == 'The App Details':
+		st.title('How the challenge was addressed')
+		st.markdown('---')
+		st.markdown(f"""
+			<p align="justify">To address the challenge, the team developed a web app that aims to provide information that 
+			can complement the efforts of our decision makers in monitoring the overall vegetation health of an area, including our forest ecosystems. 
+			The app utilizes freely available remotely sensed derived information from satellite images from 2013-present.</p>
+
+			<p align="justify"><em><font color="#85221A">Note: The information presented in this app 
+			serves as a guide only. Ground validation should still be conducted to verify its accuracy.</font></em></p> 
+
+			<ul>
+			<li><strong>Indicator: <a href="https://gisgeography.com/ndvi-normalized-difference-vegetation-index/">Normalized Difference Vegetation Index (NDVI)</a></strong></li>
+			<p style="margin-left: 30px" align="justify">NDVI is a widely used indicator used to quantify vegetation health based on how the vegetation responds to light at the 
+			Near Infrared (NIR) and Red bands.</p>
+			</ul>
+
+			<p style="margin-left: 30px" align="justify">NDVI, which ranges in value from -1.0 to 1.0, is computed using this equation, <em>NDVI = (NIR - Red) / (NIR + Red)</em>. 
+			The figure below provides a visual interpretaion of NDVI values for healthy and unhealthy vegetations. </p>
+			""", unsafe_allow_html=True)
+		_, center_img, _ = st.columns((1,6,1))
+		center_img.image(r'./assets/ndvi.png')
+		now = datetime.now().strftime("%d %B %Y")
+		st.markdown(f"""	
+			<p style="margin-left: 30px" align="justify">The NDVI values were classified into six (6) distinct classes:
+			<ul style="margin-left: 30px">
+			<li style="list-style-type:square">Bare Soil and/or Water: -1 to 0 (exclusive)</li>
+			<li style="list-style-type:square">Very Low Vegetation: 0 to 0.2 (exclusive)</li>
+			<li style="list-style-type:square">Low Vegetation: 0.2 to 0.4 (exclusive)</li>
+			<li style="list-style-type:square">Moderately Low Vegetation: 0.4 to 0.6 (exclusive)</li>
+			<li style="list-style-type:square">Moderately High Vegetation: 0.6 to 0.8 (exclusive)</li>
+			<li style="list-style-type:square">High Vegetation: 0.8 to 1.0 (inclusive)</li></ul></p>
+
+			<ul>
+			<li><strong>Data: <a href="https://developers.google.com/earth-engine/datasets/catalog/LANDSAT_LC08_C01_T1_8DAY_NDVI">Landsat 8 
+			Collection 1 Tier 1 8-Day NDVI Composite (30-meter resolution)</a></strong></li>
+			<p style="margin-left: 30px" align="justify">The primary data used to obtain NDVI values are derived from the 8-day NDVI Composite of Landsat 8 images. 
+			These composites are created from all the scenes in each 8-day period beginning from the first day of the year and continuing to the 360th day of the year. 
+			The last composite of the year, beginning on day 361, overlaps the first composite of the following year by 3 days. All the images from 
+			each 8-day period are included in the composite, with the most recent pixel as the composite value.</p>
+			</ul>
+
+			<ul >
+			<li><strong>Methodology</strong></li>
+			<p style="margin-left: 30px" align="justify">The team utilized the capability of <a href="https://earthengine.google.com/">Google Earth Engine (GEE)</a> 
+			to provide access to volumes of satellite images without actually downloading data. In essence, the backend of this web app is GEE. The team implemented
+			a five (5) step process in creating the web app, listed below.</p>
+		""", unsafe_allow_html=True)
+		st.image(r'./assets/flowchart.png')
+		st.markdown(f"""
+			<li style="list-style-type:square" align="justify"><em>Data acquistion</em> - the Landsat 8 NDVI Composites are accessed from the Google Earth Engine repository.</li>
+			<li style="list-style-type:square" align="justify"><em>Data filtering</em> - the satellite images are filtered spatially and temporally based on user input. If no input provided, 
+			the web app will show default area of interest (AOI), set in Butuan City from 2013 - present.</li>
+			<li style="list-style-type:square" align="justify"><em>Data Wrangling</em> - the raw images are aggregated, spatially and temporally, into mean NDVI, per available date.</li>
+			<li style="list-style-type:square" align="justify"><em>Data Analysis</em> - the difference between NDVI values between the earliest and latest available images are obtained. 
+			Then, the percent change across the NDVI classes is computed.</li>
+			<li style="list-style-type:square" align="justify"><em>Data Visualization</em> - visual expolatory data analysis is performed, providing various time-series visualization of mean NDVI for all available images.</li>
+			<li style="list-style-type:square" align="justify"><em>Interactive Web app</em> - a web app is developed to serve as platform for visualization and analysis.</li>
+		""", unsafe_allow_html=True)
+		
+		st.markdown(f"""
+			<h3>Resources:</h3>
+			<ul>
+			<li><a href=https://developers.google.com/earth-engine/datasets/catalog/LANDSAT_LC08_C01_T1_8DAY_NDVI?hl=en#terms-of-use>Landsat 8 Collection 1 Tier 1 8-Day NDVI Composite.</a> (2021). Retrieved {now}</li>
+			<li><a href="https://developers.google.com/earth-engine/tutorials/community/time-series-visualization-with-altair">Time Series Visualization with Altair</a> | Google Earth Engine. (2021). Retrieved {now}</li>
+			<li><a href="https://boundingbox.klokantech.com/">Bounding Box Tool</a>. (2021). Retrieved {now}</li>
+			</ul>
+
+			""", unsafe_allow_html=True)
+
+	elif navigation == 'The Team':
+		st.title('FORGE Team Members')
+		st.markdown('---')
+		author1, _, author2 = st.columns((3,1,3))
+		author1.image(r'./assets/author1.png')
+		author1.markdown(f"""<center>
+			<h2>Kenneth A. Quisado</h2>
+			kaquisado@gmail.com<br>
+			<a href="https://www.linkedin.com/in/kaquisado/">LinkedIn</a> <a href="https://github.com/kenquix">GitHub</a></center>
+		""", unsafe_allow_html=True)
+		author1.markdown('---')
+		author1.markdown(f"""
+			<center>Remote sensing. Python. Cat person.</center>
+		""", unsafe_allow_html=True)
+
+		author2.image(r'./assets/author2.png')
+		author2.markdown(f"""
+			<center><h2>Ma. Verlina E. Tonga</h2>
+			foresterverlinatonga@gmail.com<br>
+			<a href="https://www.linkedin.com/in/ma-verlina-tonga-444562a4/">LinkedIn</a> <a href="https://github.com/kenquix">GitHub</a>
+		</center>""", unsafe_allow_html=True)
+		author2.markdown('---')
+		author2.markdown(f"""
+			<center>Forester. Environment Planner.</center>
+		""", unsafe_allow_html=True)
+
+	elif navigation == 'Discussion Board':
+		# with st.expander('Discussion board.', expanded=True):
+		st.image(r'./assets/header.jpg')
+		st.write('Here, you can post your ideas, provide feedback on the app and/or share the results of your exploration.')
+		components.iframe('https://padlet.com/kaquisado/v9y0rhx2lrf0tilk', height=500)
 
 	else:
-		st.title('Generate Report')
-	
+		# st.title('Generate Report')
+		map_1 = KeplerGl(height=400)
+		# keplergl_static(map_1)
+
+		HtmlFile = open(r'./assets/map1.html', 'r', encoding='utf-8')
+		components.html(HtmlFile.read(), height=500, width=700)
+		
 if __name__ == '__main__':
 	main()
