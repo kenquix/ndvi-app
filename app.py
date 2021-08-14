@@ -295,7 +295,7 @@ def main():
 	
 	# st.sidebar.subheader('Navigation Panel')
 	nav1, _ = st.columns((2))
-	navigation = st.sidebar.radio('Navigation', ['The Challenge','The App Details', 'The Prototype', 'The Team', 'Discussion Board'], index=1)
+	navigation = st.sidebar.radio('Navigation', ['The Challenge','The App Details', 'The Prototype', 'The Team', 'Discussion Board'], index=0)
 	if navigation == 'The Prototype':
 		st.image(r'./assets/header.jpg')
 		st.title('Vegetation Assessment and Monitoring App')
