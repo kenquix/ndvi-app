@@ -34,7 +34,7 @@ from statsmodels.nonparametric.smoothers_lowess import lowess
 import folium
 from folium import plugins
 
-from keplergl import KeplerGl
+# from keplergl import KeplerGl
 
 st.set_page_config(page_title='Vega Map', page_icon='🌳')
 
@@ -1020,12 +1020,13 @@ def main():
 		components.iframe('https://padlet.com/kaquisado/v9y0rhx2lrf0tilk', height=500)
 
 	else:
+		st.text('Nothing here')
 		# st.title('Generate Report')
-		map_1 = KeplerGl(height=400)
+		# map_1 = KeplerGl(height=400)
 		# keplergl_static(map_1)
 
-		HtmlFile = open(r'./assets/map1.html', 'r', encoding='utf-8')
-		components.html(HtmlFile.read(), height=500, width=700)
+		# HtmlFile = open(r'./assets/map1.html', 'r', encoding='utf-8')
+		# components.html(HtmlFile.read(), height=500, width=700)
 		
 if __name__ == '__main__':
 	main()
