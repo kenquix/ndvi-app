@@ -295,7 +295,7 @@ def main():
 	
 	# st.sidebar.subheader('Navigation Panel')
 	nav1, _ = st.columns((2))
-	navigation = st.sidebar.radio('Navigation', ['The Challenge','The App Details', 'The Prototype', 'The Team', 'Discussion Board'], index=0)
+	navigation = st.sidebar.radio('Navigation', ['The Challenge','The Approach', 'The Prototype', 'The Team', 'Discussion Board'], index=0)
 	if navigation == 'The Prototype':
 		st.image(r'./assets/header.jpg')
 		st.title('Vegetation Assessment and Monitoring App')
@@ -917,7 +917,7 @@ def main():
 		
 		st.image(r'./assets/SDGs.png')
 
-	elif navigation == 'The App Details':
+	elif navigation == 'The Approach':
 		st.title('How the challenge was addressed')
 		st.markdown('---')
 		st.markdown(f"""
@@ -937,7 +937,7 @@ def main():
 			<p style="margin-left: 30px" align="justify">NDVI, which ranges in value from -1.0 to 1.0, is computed using this equation, <em>NDVI = (NIR - Red) / (NIR + Red)</em>. 
 			The figure below provides a visual interpretaion of NDVI values for healthy and unhealthy vegetations. </p>
 			""", unsafe_allow_html=True)
-		_, center_img, _ = st.columns((1,6,1))
+		_, center_img, _ = st.columns((1,4,1))
 		center_img.image(r'./assets/ndvi.png')
 		now = datetime.now().strftime("%d %B %Y")
 		st.markdown(f"""	
@@ -965,7 +965,8 @@ def main():
 			to provide access to volumes of satellite images without actually downloading data. In essence, the backend of this web app is GEE. The team implemented
 			a five (5) step process in creating the web app, listed below.</p>
 		""", unsafe_allow_html=True)
-		st.image(r'./assets/flowchart.png')
+		_, center_img, _ = st.columns((1,40,1))
+		center_img.image(r'./assets/flowchart.png')
 		st.markdown(f"""
 			<li style="list-style-type:square" align="justify"><em>Data acquistion</em> - the Landsat 8 NDVI Composites are accessed from the Google Earth Engine repository.</li>
 			<li style="list-style-type:square" align="justify"><em>Data filtering</em> - the satellite images are filtered spatially and temporally based on user input. If no input provided, 
@@ -974,9 +975,10 @@ def main():
 			<li style="list-style-type:square" align="justify"><em>Data Analysis</em> - the difference between NDVI values between the earliest and latest available images are obtained. 
 			Then, the percent change across the NDVI classes is computed.</li>
 			<li style="list-style-type:square" align="justify"><em>Data Visualization</em> - visual expolatory data analysis is performed, providing various time-series visualization of mean NDVI for all available images.</li>
-			<li style="list-style-type:square" align="justify"><em>Interactive Web app</em> - a web app is developed to serve as platform for visualization and analysis.</li>
+			<li style="list-style-type:square" align="justify"><em>Interactive Web app</em> - a web app is developed to serve as platform for visualization and analysis.</li><br>
 		""", unsafe_allow_html=True)
-		
+		_, webimg = st.columns((1,25))
+		webimg.image(r'./assets/webapp.png')
 		st.markdown(f"""
 			<h3>Resources:</h3>
 			<ul>
@@ -986,6 +988,7 @@ def main():
 			</ul>
 
 			""", unsafe_allow_html=True)
+
 
 	elif navigation == 'The Team':
 		st.title('FORGE Team Members')
