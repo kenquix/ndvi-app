@@ -18,7 +18,7 @@ import streamlit as st
 import pandas as pd
 import numpy as np
 import altair as alt
-from fpdf import FPDF
+# from fpdf import FPDF
 # from html2image import Html2Image
 from datetime import timedelta, datetime
 
@@ -295,6 +295,9 @@ def main():
 	st.markdown(f"""
 		<style>
 			.reportview-container .main .block-container{{
+				max-width: {900}px;
+				padding-left: 3rem;
+				paddin-rigth: 3rem;
 				padding-top: {1}rem;
 				padding-bottom: {1}rem;
 			}}
@@ -303,9 +306,9 @@ def main():
 
 	st.sidebar.subheader('Navigation')
 	# nav1, _ = st.columns((2))
-	navigation = st.sidebar.radio('', ['The Challenge','The Approach', 'The Prototype', 'The Team', 'Discussion Board'], index=0)
+	navigation = st.sidebar.radio('', ['The Challenge','The Approach', 'The Prototype', 'Discussion Board', 'The Team'], index=0)
 	if navigation == 'The Prototype':
-		st.image(r'./assets/header.jpg')
+		st.image(r'./assets/header.jpg', use_column_width=True)
 		st.title('Vegetation Assessment and Monitoring App')
 		st.subheader('A. Data Collection')
 		with st.expander('', expanded=True):
@@ -436,7 +439,7 @@ def main():
 
 			my_map.add_ee_layer(diff_img.clip(aoi.geometry()), visParams_diff, 'Difference Image')
 			my_map.add_ee_layer(start_img.clip(aoi.geometry()), visParams, f'{startdate.strftime("%d %B %Y")} Image')
-			my_map.add_ee_layer(end_img.clip(aoi.geometry()), visParams, f'{enddate.strftime("%d %B %Y")}_Image')
+			my_map.add_ee_layer(end_img.clip(aoi.geometry()), visParams, f'{enddate.strftime("%d %B %Y")} Image')
 			
 			# # Add a layer control panel to the map.
 			my_map.add_child(folium.LayerControl())
@@ -446,12 +449,18 @@ def main():
 			plugins.Fullscreen().add_to(my_map)
 			plugins.MiniMap().add_to(my_map)
 
+			make_map_responsive= """
+				<style>
+				[title~="st.iframe"] { width: 100%}
+				</style>
+				"""
+			st.markdown(make_map_responsive, unsafe_allow_html=True)
 			folium_static(my_map)
 
-			st.image(r'./assets/scale.png')
+			st.image(r'./assets/scale.png', use_column_width=True)
 
 			# st.markdown('<br>', unsafe_allow_html=True)
-			with st.spinner(text="Fetching data from GEE server... Generating animation..."):
+			with st.spinner(text="Fetching data from GEE server... Generating timelapse animation..."):
 				with st.expander('Timelapse of Annual NDVI Composite Images'):
 					timelapse = st.checkbox('Check to generate the animation.')
 					
@@ -904,7 +913,7 @@ def main():
 	elif navigation == 'The Challenge':
 		st.markdown(f"""<h1><a href="https://sparta.dap.edu.ph/opendata/lgu/butuancity/challenges/butuancity-forest-ecosystem">Sparta Hackathon Challenge</a></h1>""", unsafe_allow_html=True)
 		st.markdown('---')
-		st.image(r'./assets/header.jpg')
+		st.image(r'./assets/header.jpg', use_column_width=True)
 		st.markdown(f"""
 		<h4>Sector : Forest Ecosystem</h4>
 
@@ -1001,6 +1010,14 @@ def main():
 
 			""", unsafe_allow_html=True)
 
+	elif navigation == 'Discussion Board':
+		# with st.expander('Discussion board.', expanded=True):
+		st.image(r'./assets/header.jpg', use_column_width=True)
+		st.markdown(f"""
+		Here, individuals can post their ideas, provide feedback on the app and/or share the results of your exploration. Also, 
+		the general public is encouraged to use this platform to participate in monitoring forest resources.
+		""", unsafe_allow_html=True)
+		components.iframe('https://padlet.com/kaquisado/v9y0rhx2lrf0tilk', height=600)
 
 	elif navigation == 'The Team':
 		st.title('FORGE Team Members')
@@ -1027,12 +1044,6 @@ def main():
 		author2.markdown(f"""
 			<center>Forester. Environment Planner.</center>
 		""", unsafe_allow_html=True)
-
-	elif navigation == 'Discussion Board':
-		# with st.expander('Discussion board.', expanded=True):
-		st.image(r'./assets/header.jpg')
-		st.write('Here, you can post your ideas, provide feedback on the app and/or share the results of your exploration.')
-		components.iframe('https://padlet.com/kaquisado/v9y0rhx2lrf0tilk', height=500)
 
 	else:
 		st.text('Nothing here')
