@@ -292,6 +292,15 @@ def create_download_link(val, filename):
 #         self.cell(0, 10, 'Page ' + str(self.page_no()) + '/{nb}', 0, 0, 'C')
 
 def main():
+	st.markdown(f"""
+		<style>
+			.reportview-container .main .block-container{{
+				padding-top: {1}rem;
+				padding-bottom: {1}rem;
+			}}
+		</style>
+		""", unsafe_allow_html=True)
+
 	st.sidebar.subheader('Navigation')
 	# nav1, _ = st.columns((2))
 	navigation = st.sidebar.radio('', ['The Challenge','The Approach', 'The Prototype', 'The Team', 'Discussion Board'], index=0)
@@ -346,6 +355,7 @@ def main():
 					# files = [file for file in os.listdir(r'./assets') if file.endswith('.shp')]
 					# region = geemap.kml_to_ee(inputFile)
 					data = ast.literal_eval(g3)['coordinates']
+					data = [[i[:2] for i in data[0]]]
 					# data = region.geometry().getInfo()['coordinates']
 
 				else:
@@ -654,7 +664,7 @@ def main():
 							options=['Inter-quartile Range', 'Confidence Interval', 
 							'Standard Error', 'Standard Deviation'],
 							help='Defines the extent of the colored region')
-		standardized = st.checkbox('Click to standardized')
+		standardized = st.checkbox('Click to standardize')
 		rule_option_dict = {'Mean': 'mean', 'Median': 'median', 'Maximum': 'max', 'Minimum': 'min'}
 		band_option_dict = {'Inter-quartile Range': 'iqr', 'Confidence Interval': 'ci', 
 			'Standard Error': 'stderr', 'Standard Deviation': 'stdev'}
@@ -981,6 +991,7 @@ def main():
 		_, webimg = st.columns((1,25))
 		webimg.image(r'./assets/webapp.png')
 		st.markdown(f"""
+			<br>
 			<h3>Resources:</h3>
 			<ul>
 			<li><a href=https://developers.google.com/earth-engine/datasets/catalog/LANDSAT_LC08_C01_T1_8DAY_NDVI?hl=en#terms-of-use>Landsat 8 Collection 1 Tier 1 8-Day NDVI Composite.</a> (2021). Retrieved {now}</li>
