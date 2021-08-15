@@ -36,7 +36,7 @@ from folium import plugins
 
 # from keplergl import KeplerGl
 
-st.set_page_config(page_title='Vega Map', page_icon='🌳')
+st.set_page_config(page_title='Vega Map', page_icon=r'./assets/logo.png')
 
 # remove 'Made with Streamlit' footer MainMenu {visibility: hidden;}
 hide_streamlit_style = """
@@ -136,7 +136,7 @@ def add_ee_layer(self, ee_object, vis_params, name):
 # Add EE drawing method to folium.
 folium.Map.add_ee_layer = add_ee_layer
 
-@st.cache(allow_output_mutation=True, suppress_st_warning=True)
+@st.cache(allow_output_mutation=True, suppress_st_warning=True, show_spinner=False)
 def read_data(l8, startdate, enddate, aoi, datamask):
 	start1 = startdate.strftime('%Y-%m-%d')
 	start2 = (startdate+timedelta(1)).strftime('%Y-%m-%d')
@@ -233,7 +233,7 @@ def read_data(l8, startdate, enddate, aoi, datamask):
 
 	return df, tabular_df, start_img.updateMask(datamask), end_img.updateMask(datamask), diff_img.updateMask(datamask), diff_bin_norm, hist_df
 
-@st.cache()
+@st.cache(show_spinner=False)
 def date_range(l8, aoi):
 	l8 = l8.select('NDVI')
 	scale=10000
@@ -292,10 +292,9 @@ def create_download_link(val, filename):
 #         self.cell(0, 10, 'Page ' + str(self.page_no()) + '/{nb}', 0, 0, 'C')
 
 def main():
-	
-	# st.sidebar.subheader('Navigation Panel')
-	nav1, _ = st.columns((2))
-	navigation = st.sidebar.radio('Navigation', ['The Challenge','The Approach', 'The Prototype', 'The Team', 'Discussion Board'], index=0)
+	st.sidebar.subheader('Navigation')
+	# nav1, _ = st.columns((2))
+	navigation = st.sidebar.radio('', ['The Challenge','The Approach', 'The Prototype', 'The Team', 'Discussion Board'], index=0)
 	if navigation == 'The Prototype':
 		st.image(r'./assets/header.jpg')
 		st.title('Vegetation Assessment and Monitoring App')
@@ -379,7 +378,8 @@ def main():
 			4. Generate timelapse of Annual Landsat composites (Convert to NDVI)
 			""", unsafe_allow_html=True)
 
-			date_list = date_range(l8, aoi)
+			with st.spinner(text="Fetching data from GEE server..."):
+				date_list = date_range(l8, aoi)
 
 			startdate, enddate = st.select_slider('DOI Slider', 
 				date_list.Timestamp.unique().tolist(), 
@@ -390,10 +390,10 @@ def main():
 			enddate_format = enddate.strftime('%B %d, %Y')
 
 			# df = df[(df.Timestamp >= startdate) & (df.Timestamp <= enddate)]
-
-			df, report_df, start_img, end_img, diff_img, diff_bin_norm, hist_df = read_data(l8, startdate, enddate, aoi, datamask)
-			df['Timestamp'] = pd.to_datetime(df.Timestamp)
-			df_annual = transform(df)
+			with st.spinner(text="Fetching data from GEE server..."):
+				df, report_df, start_img, end_img, diff_img, diff_bin_norm, hist_df = read_data(l8, startdate, enddate, aoi, datamask)
+				df['Timestamp'] = pd.to_datetime(df.Timestamp)
+				df_annual = transform(df)
 							
 			visParams = {
 				# 'bands': ['NDVI'],
@@ -424,10 +424,10 @@ def main():
 			# basemaps['Google Maps'].add_to(my_map)
 			basemaps['Google Satellite Hybrid'].add_to(my_map)
 
-			my_map.add_ee_layer(start_img.clip(aoi.geometry()), visParams, f'{startdate}_IMG')
-			my_map.add_ee_layer(end_img.clip(aoi.geometry()), visParams, f'{enddate}_IMG')
-			my_map.add_ee_layer(diff_img.clip(aoi.geometry()), visParams_diff, 'NDVI Diff_IMG')
-
+			my_map.add_ee_layer(diff_img.clip(aoi.geometry()), visParams_diff, 'Difference Image')
+			my_map.add_ee_layer(start_img.clip(aoi.geometry()), visParams, f'{startdate.strftime("%d %B %Y")} Image')
+			my_map.add_ee_layer(end_img.clip(aoi.geometry()), visParams, f'{enddate.strftime("%d %B %Y")}_Image')
+			
 			# # Add a layer control panel to the map.
 			my_map.add_child(folium.LayerControl())
 			my_map.add_child(folium.LatLngPopup())
@@ -440,102 +440,103 @@ def main():
 
 			st.image(r'./assets/scale.png')
 
-			# st.markdown('<br>', unsafe_allow_html=True)	
-			with st.expander('Timelapse of Annual NDVI Composite Images'):
-				timelapse = st.checkbox('Check to generate the animation.')
-				
-				if timelapse:
-					out_dir = os.path.join(os.path.expanduser('~'), 'assets')
-
-					if not os.path.exists(out_dir):
-						os.makedirs(out_dir)
-
-					# out_gif = os.path.join(out_dir, 'landsat_ndvi_ts.gif')
-
-					# add bands for DOY and Year
-					def add_doy(img):
-						doy = ee.Date(img.get('system:time_start')).getRelative('day', 'year')
-						return img.set('doy', doy)
+			# st.markdown('<br>', unsafe_allow_html=True)
+			with st.spinner(text="Fetching data from GEE server... Generating animation..."):
+				with st.expander('Timelapse of Annual NDVI Composite Images'):
+					timelapse = st.checkbox('Check to generate the animation.')
 					
-					def add_year(img):
-						year = ee.Date(img.get('system:time_start')).get('year')
-						return img.set('year', year)
-					
-					l8 = l8.map(add_doy)
-					l8 = l8.map(add_year)
+					if timelapse:
+						out_dir = os.path.join(os.path.expanduser('~'), 'assets')
 
-					filenames = []
-					images = []
-					region = aoi.geometry().bounds()
+						if not os.path.exists(out_dir):
+							os.makedirs(out_dir)
 
-					for i in range(startdate.year, enddate.year + 1):
-						timelapse_dir = os.path.join(zip_dir, f'landsat_{i}.png')
-						fcol = l8.filterMetadata('year', 'equals', i).reduce(ee.Reducer.median()).clip(aoi).updateMask(datamask)
-						geemap.get_image_thumbnail(fcol, timelapse_dir, visParams, region=region, dimensions=500, format='png')
-						img = Image.open(timelapse_dir)
-						draw = ImageDraw.Draw(img)
-						draw.text((0,0), f'Year {i}')
-						img.save(timelapse_dir)
-						filenames.append(timelapse_dir)
+						# out_gif = os.path.join(out_dir, 'landsat_ndvi_ts.gif')
 
-					for filename in filenames:
-						images.append(imageio.imread(filename))
-					
-					imageio.mimsave(os.path.join(zip_dir, 'landsat_ndvi_ts.gif'), images, fps=1)
-					# s1 = startdate.strftime('%Y-%m-%d')
-					# d1 = enddate.strftime('%Y-%m-%d')
+						# add bands for DOY and Year
+						def add_doy(img):
+							doy = ee.Date(img.get('system:time_start')).getRelative('day', 'year')
+							return img.set('doy', doy)
+						
+						def add_year(img):
+							year = ee.Date(img.get('system:time_start')).get('year')
+							return img.set('year', year)
+						
+						l8 = l8.map(add_doy)
+						l8 = l8.map(add_year)
 
-					# band_options = {'Color Infrared (Vegetation)': ['NIR', 'Red', 'Green'],
-					# 			'False Color': ['SWIR2', 'SWIR1', 'Red'],
-					# 			'Natural Color': ["Red", "Green", 'Blue'],
-					# 			'Agriculture': ['SWIR1', 'NIR', 'Blue'],
-					# 			'Healthy Vegetation': ['NIR', 'SWIR1', 'Blue'],
-					# 			'Land/Water': ['NIR', 'SWIR1', 'Red'],
-					# 			'Natural with Atmospheric Removal': ['SWIR2', 'NIR', 'Green'],
-					# 			'Shortwave Infrared': ['SWIR2', 'NIR', 'Green'],
-					# 			'Vegetation Analysis': ['SWIR1', 'NIR', 'Red']}
+						filenames = []
+						images = []
+						region = aoi.geometry().bounds()
 
-					# ts_bands = st.selectbox('Select bands to visualize', list(band_options.keys()),
-					# 						help="""Color Infrared (Vegetation), ['NIR', 'Red', 'Green']\
-					# 								False Color, ['SWIR2', 'SWIR1', 'Red']\
-					# 								Natural Color, ['Red', 'Green', 'Blue']\
-					# 								Agriculture, ['SWIR1', 'NIR', 'Blue']\
-					# 								Healthy Vegetation, ['NIR', 'SWIR1', 'Blue']\
-					# 								Land/Water, ['NIR', 'SWIR1', 'Red']\
-					# 								Natural with Atmospheric Removal, ['SWIR2', 'NIR', 'Green']\
-					# 								Shortwave Infrared, ['SWIR2', 'NIR', 'Green']\
-					# 								Vegetation Analysis, ['SWIR1', 'NIR', 'Red']
-					# 						""")
+						for i in range(startdate.year, enddate.year + 1):
+							timelapse_dir = os.path.join(zip_dir, f'landsat_{i}.png')
+							fcol = l8.filterMetadata('year', 'equals', i).reduce(ee.Reducer.median()).clip(aoi).updateMask(datamask)
+							geemap.get_image_thumbnail(fcol, timelapse_dir, visParams, region=region, dimensions=500, format='png')
+							img = Image.open(timelapse_dir)
+							draw = ImageDraw.Draw(img)
+							draw.text((0,0), f'Year {i}')
+							img.save(timelapse_dir)
+							filenames.append(timelapse_dir)
 
-					# Map.add_landsat_ts_gif(
-					# 	layer_name="Timelapse",
-					# 	roi=aoi.geometry(),
-					# 	# label='Timelapse',
-					# 	start_year=startdate.year,
-					# 	end_year=enddate.year,
-					# 	start_date=s1[5:],
-					# 	end_date=d1[5:],
-					# 	bands=band_options[ts_bands],
-					# 	vis_params=None,
-					# 	dimensions=650,
-					# 	frames_per_second=.5,
-					# 	font_size=30,
-					# 	font_color="white",
-					# 	add_progress_bar=True,
-					# 	progress_bar_color="cyan",
-					# 	progress_bar_height=5,
-					# 	out_gif=out_gif,
-					# 	download=True)
+						for filename in filenames:
+							images.append(imageio.imread(filename))
+						
+						imageio.mimsave(os.path.join(zip_dir, 'landsat_ndvi_ts.gif'), images, fps=1)
+						# s1 = startdate.strftime('%Y-%m-%d')
+						# d1 = enddate.strftime('%Y-%m-%d')
 
-					file_ = open(os.path.join(zip_dir, 'landsat_ndvi_ts.gif'), "rb")
-					contents = file_.read()
-					data_url = base64.b64encode(contents).decode("utf-8")
-					file_.close()
-					
-					st.markdown(f"""<center><img src="data:image/gif;base64,{data_url}" alt="timelapse gif"></center>""",
-						unsafe_allow_html=True)
+						# band_options = {'Color Infrared (Vegetation)': ['NIR', 'Red', 'Green'],
+						# 			'False Color': ['SWIR2', 'SWIR1', 'Red'],
+						# 			'Natural Color': ["Red", "Green", 'Blue'],
+						# 			'Agriculture': ['SWIR1', 'NIR', 'Blue'],
+						# 			'Healthy Vegetation': ['NIR', 'SWIR1', 'Blue'],
+						# 			'Land/Water': ['NIR', 'SWIR1', 'Red'],
+						# 			'Natural with Atmospheric Removal': ['SWIR2', 'NIR', 'Green'],
+						# 			'Shortwave Infrared': ['SWIR2', 'NIR', 'Green'],
+						# 			'Vegetation Analysis': ['SWIR1', 'NIR', 'Red']}
 
-				st.markdown('<br>', unsafe_allow_html=True)			
+						# ts_bands = st.selectbox('Select bands to visualize', list(band_options.keys()),
+						# 						help="""Color Infrared (Vegetation), ['NIR', 'Red', 'Green']\
+						# 								False Color, ['SWIR2', 'SWIR1', 'Red']\
+						# 								Natural Color, ['Red', 'Green', 'Blue']\
+						# 								Agriculture, ['SWIR1', 'NIR', 'Blue']\
+						# 								Healthy Vegetation, ['NIR', 'SWIR1', 'Blue']\
+						# 								Land/Water, ['NIR', 'SWIR1', 'Red']\
+						# 								Natural with Atmospheric Removal, ['SWIR2', 'NIR', 'Green']\
+						# 								Shortwave Infrared, ['SWIR2', 'NIR', 'Green']\
+						# 								Vegetation Analysis, ['SWIR1', 'NIR', 'Red']
+						# 						""")
+
+						# Map.add_landsat_ts_gif(
+						# 	layer_name="Timelapse",
+						# 	roi=aoi.geometry(),
+						# 	# label='Timelapse',
+						# 	start_year=startdate.year,
+						# 	end_year=enddate.year,
+						# 	start_date=s1[5:],
+						# 	end_date=d1[5:],
+						# 	bands=band_options[ts_bands],
+						# 	vis_params=None,
+						# 	dimensions=650,
+						# 	frames_per_second=.5,
+						# 	font_size=30,
+						# 	font_color="white",
+						# 	add_progress_bar=True,
+						# 	progress_bar_color="cyan",
+						# 	progress_bar_height=5,
+						# 	out_gif=out_gif,
+						# 	download=True)
+
+						file_ = open(os.path.join(zip_dir, 'landsat_ndvi_ts.gif'), "rb")
+						contents = file_.read()
+						data_url = base64.b64encode(contents).decode("utf-8")
+						file_.close()
+						
+						st.markdown(f"""<center><img src="data:image/gif;base64,{data_url}" alt="timelapse gif"></center>""",
+							unsafe_allow_html=True)
+
+					st.markdown('<br>', unsafe_allow_html=True)			
 
 		st.markdown('---')
 		st.subheader('C. Data Analytics')
