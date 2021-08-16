@@ -35,6 +35,7 @@ import folium
 from folium import plugins
 
 # from keplergl import KeplerGl
+import time
 
 st.set_page_config(page_title='Vega Map', page_icon=r'./assets/logo.png')
 
@@ -1017,7 +1018,16 @@ def main():
 		Here, individuals can post their ideas, provide feedback on the app and/or share the results of your exploration. Also, 
 		the general public is encouraged to use this platform to participate in monitoring forest resources.
 		""", unsafe_allow_html=True)
-		components.iframe('https://padlet.com/kaquisado/v9y0rhx2lrf0tilk', height=600)
+
+		placeholder = st.empty()
+		with st.spinner(text="Loading the discussion board..."):
+			components.iframe('https://padlet.com/kaquisado/v9y0rhx2lrf0tilk', height=600)
+			time.sleep(5)
+
+		placeholder.success('Done!')
+		time.sleep(0.5)
+		placeholder.empty()
+		st.balloons()
 
 	elif navigation == 'The Team':
 		st.title('FORGE Team Members')
