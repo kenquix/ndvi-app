@@ -384,12 +384,13 @@ def main():
 		with st.container():		
 			# st.markdown('---')
 			st.subheader('B. Map Visualization')
-			st.markdown(f"""
-			1. Use the slider widget to select the DOI.<br>
-			2. Wait for the app to load the NDVI composite images available for the AOI and DOI.
-			3. Explore the layers.
-			4. Generate timelapse of Annual Landsat composites (Convert to NDVI)
-			""", unsafe_allow_html=True)
+			with st.expander('', expanded=True):
+				st.markdown(f"""
+				1. Use the slider widget to select the DOI.<br>
+				2. Wait for the app to load the NDVI composite images available for the AOI and DOI.
+				3. Explore the layers.
+				4. Generate timelapse of Annual Landsat composites (Convert to NDVI)
+				""", unsafe_allow_html=True)
 
 			with st.spinner(text="Fetching data from GEE server..."):
 				date_list = date_range(l8, aoi)
@@ -745,8 +746,8 @@ def main():
 			is observed in <strong>{df.loc[df_annual.NDVI.argmin(),'Timestamp'].strftime('%Y')}</strong>.</p>
 
 			<p align="justify">The red line corresponds to the average NDVI over the AOI and DOI.</p>		
-			<p align="justify">Upon ticking the checkbox, the plot now shows the standardized values of tne NDVI time series setting the mean of the series to zero with a
-			standard deviation equal to 1.</p>
+			<p align="justify">Upon ticking the checkbox, the plot now shows the standardized values of the NDVI time-series, setting the mean of the series to zero (0) with a
+			standard deviation equal to one (1).</p>
 			""", unsafe_allow_html=True)
 		
 		# adf = adfuller(df['NDVI'])
@@ -951,9 +952,16 @@ def main():
 			Infrared (NIR) and Red bands.</p>
 			</ul>
 
-			<p style="margin-left: 30px" align="justify">NDVI, which ranges in value from -1.0 to 1.0, is computed using this equation, <em>NDVI = (NIR - Red) / (NIR + Red)</em>. 
-			The figure below provides a visual interpretation of NDVI values for healthy and unhealthy vegetations. </p>
+			<p style="margin-left: 30px" align="justify">NDVI, which ranges in value from -1.0 to 1.0, is computed using the equation below, where NDVI
+			is equal to the ratio of the difference and sum of the Near-Infrared (NIR) and Red bands.</p>
 			""", unsafe_allow_html=True)
+
+		st.latex(r"NDVI = \frac{(NIR - Red)} {(NIR + Red)}")
+
+		st.markdown(f"""
+		<p style="margin-left: 30px" align="justify">The figure below provides a visual interpretation of NDVI values for healthy and unhealthy vegetations.</p>
+		""", unsafe_allow_html=True)
+
 		_, center_img, _ = st.columns((1,4,1))
 		center_img.image(r'./assets/ndvi.png')
 		now = datetime.now().strftime("%d %B %Y")
@@ -1004,6 +1012,8 @@ def main():
 			<li><a href=https://developers.google.com/earth-engine/datasets/catalog/LANDSAT_LC08_C01_T1_8DAY_NDVI?hl=en#terms-of-use>Landsat 8 Collection 1 Tier 1 8-Day NDVI Composite.</a> (2021). Retrieved {now}</li>
 			<li><a href="https://developers.google.com/earth-engine/tutorials/community/time-series-visualization-with-altair">Time Series Visualization with Altair</a> | Google Earth Engine. (2021). Retrieved {now}</li>
 			<li><a href="https://boundingbox.klokantech.com/">Bounding Box Tool</a>. (2021). Retrieved {now}</li>
+			<li>Aquino, D., Rocha Neto, O., Moreira, M., Teixeira, A., & Andrade, E. (2018). Use of remote sensing to identify areas at risk of degradation in the semi-arid region. 49(3). 
+			<a href="https://www.scielo.br/j/rca/a/JByZddTmJGRh67Fj8xQWtZL/?lang=en#">doi: 10.5935/1806-6690.20180047</a></li>
 			</ul>
 
 			""", unsafe_allow_html=True)
@@ -1013,7 +1023,7 @@ def main():
 		st.image(r'./assets/header.jpg', use_column_width=True)
 		st.markdown(f"""
 		Here, individuals can post their ideas, provide feedback on the app and/or share the results of your exploration. Also, 
-		the general public is encouraged to use this platform to participate in monitoring forest resources.
+		the general public is encouraged to use this platform to participate in monitoring forest health and resources.
 		""", unsafe_allow_html=True)
 
 		placeholder = st.empty()
@@ -1024,7 +1034,7 @@ def main():
 		placeholder.success('Done!')
 		time.sleep(0.5)
 		placeholder.empty()
-		st.balloons()
+		# st.balloons()
 
 	elif navigation == 'The Team':
 		st.title('FORGE Team Members')
