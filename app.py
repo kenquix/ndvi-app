@@ -39,6 +39,8 @@ import time
 
 st.set_page_config(page_title='Vega Map', page_icon=r'./assets/logo.png')
 
+alt.renderers.set_embed_options(actions=False)
+
 # remove 'Made with Streamlit' footer MainMenu {visibility: hidden;}
 hide_streamlit_style = """
 			<style>
@@ -293,6 +295,7 @@ def create_download_link(val, filename):
 #         self.cell(0, 10, 'Page ' + str(self.page_no()) + '/{nb}', 0, 0, 'C')
 
 def main():
+	# modify the margins
 	st.markdown(f"""
 		<style>
 			.reportview-container .main .block-container{{
@@ -302,6 +305,15 @@ def main():
 				padding-top: 1rem;
 				padding-bottom: 1rem;
 			}}
+		</style>
+		""", unsafe_allow_html=True)
+
+	# remove the ellipsis in altair chart
+	st.markdown("""
+		<style type='text/css'>
+			details {
+				display: none;
+			}
 		</style>
 		""", unsafe_allow_html=True)
 
@@ -1014,6 +1026,8 @@ def main():
 			<li><a href="https://boundingbox.klokantech.com/">Bounding Box Tool</a>. (2021). Retrieved {now}</li>
 			<li>Aquino, D., Rocha Neto, O., Moreira, M., Teixeira, A., & Andrade, E. (2018). Use of remote sensing to identify areas at risk of degradation in the semi-arid region. 49(3). 
 			<a href="https://www.scielo.br/j/rca/a/JByZddTmJGRh67Fj8xQWtZL/?lang=en#">doi: 10.5935/1806-6690.20180047</a></li>
+			<li>Barka, I., Bucha, T., Molnár, T., Móricz, N., Somogyi, Z., & Koreň, M. (2019). Suitability of MODIS-based NDVI index for forest monitoring and its seasonal applications in Central 
+			Europe. Central European Forestry Journal, 65(3-4), 206-217. <a href="https://sciendo.com/article/10.2478/forj-2019-0020">doi: 10.2478/forj-2019-0020</a></li>
 			</ul>
 
 			""", unsafe_allow_html=True)
