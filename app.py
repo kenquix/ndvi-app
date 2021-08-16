@@ -298,7 +298,7 @@ def main():
 			.reportview-container .main .block-container{{
 				max-width: {900}px;
 				padding-left: 3rem;
-				padding-rigth: 3rem;
+				padding-right: 3rem;
 				padding-top: {1}rem;
 				padding-bottom: {1}rem;
 			}}
