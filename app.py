@@ -296,17 +296,16 @@ def main():
 	st.markdown(f"""
 		<style>
 			.reportview-container .main .block-container{{
-				max-width: {900}px;
+				max-width: 900px;
 				padding-left: 3rem;
 				padding-right: 3rem;
-				padding-top: {1}rem;
-				padding-bottom: {1}rem;
+				padding-top: 1rem;
+				padding-bottom: 1rem;
 			}}
 		</style>
 		""", unsafe_allow_html=True)
 
 	st.sidebar.subheader('Navigation')
-	# nav1, _ = st.columns((2))
 	navigation = st.sidebar.radio('', ['The Challenge','The Approach', 'The Prototype', 'Discussion Board', 'The Team'], index=0)
 	if navigation == 'The Prototype':
 		st.image(r'./assets/header.jpg', use_column_width=True)
@@ -920,17 +919,14 @@ def main():
 
 		<h4>Theme : Protecting and controlling forest ecosystem using data and technology</h4><br>
 
-		<p align="justify">Butuan City also known as the Timber City of the South enriches its potentials 
-		towards investing on the richness of its Forestland Ecosystem. As hampered by 
-		some illegal activities and exploitations, the City of Butuan recognizes the 
-		relevance of data in the development of technological innovations which can provide 
-		mechanisms in protecting forestland areas which have the capability to support 
-		the economic growth and resiliency of the city.  To bring its people to one venue 
-		for positive engagement and collaborative efforts, the City of Butuan invites ideas, 
-		project proposals, and technological innovations to address threatening factors in the 
-		protection and conservation of the Forestland ecosystem through hackathons. Datasets and 
-		other entries that will be collected in this challenge will be used in hackathons to 
-		create a pitch project for Butuan that will address their problem in the tourism sector.
+		<p align="justify">Butuan City, also known as the Timber City of the South, enriches its potentials towards 
+		investing in the richness of its Forestland Ecosystem. As hampered by some illegal activities and exploitations, 
+		the City of Butuan recognizes the relevance of data in the development of technological innovations which can 
+		provide mechanisms in protecting forestland areas that can support the economic growth and resiliency of the city. 
+		To bring its people to one venue for positive engagement and collaborative efforts, the City of Butuan invites 
+		ideas, project proposals, and technological innovations to address threatening factors in protecting and conserving 
+		the Forestland ecosystem through hackathons. Datasets and other entries collected in this challenge will be used in 
+		hackathons to create a pitch project for Butuan that will address their problem in the tourism sector.</p>
 		 
 		<p align="justify"><em>*This challenge supports the following <a href="https://www.ph.undp.org/content/philippines/en/home/sustainable-development-goals2.html">UN SDGs</a> 
 		and <a href="https://www.un.org/securitycouncil/content/repertoire/thematic-items">Thematic issues.</a></p></em></p>
@@ -942,21 +938,21 @@ def main():
 		st.title('How the challenge was addressed')
 		st.markdown('---')
 		st.markdown(f"""
-			<p align="justify">To address the challenge, the team developed a web app that aims to provide information that 
-			can complement the efforts of our decision makers in monitoring the overall vegetation health of an area, including our forest ecosystems. 
-			The app utilizes freely available remotely sensed derived information from satellite images from 2013-present.</p>
+			<p align="justify">To address the challenge, the team developed a web app that aims to provide information that can 
+			complement the efforts of our decision-makers in monitoring the overall vegetation health of an area, including our 
+			forest ecosystems. The app uses freely available remotely sensed derived information from satellite images from 2013 - present.</p>
 
 			<p align="justify"><em><font color="#85221A">Note: The information presented in this app 
 			serves as a guide only. Ground validation should still be conducted to verify its accuracy.</font></em></p> 
 
 			<ul>
 			<li><strong>Indicator: <a href="https://gisgeography.com/ndvi-normalized-difference-vegetation-index/">Normalized Difference Vegetation Index (NDVI)</a></strong></li>
-			<p style="margin-left: 30px" align="justify">NDVI is a widely used indicator used to quantify vegetation health based on how the vegetation responds to light at the 
-			Near Infrared (NIR) and Red bands.</p>
+			<p style="margin-left: 30px" align="justify">NDVI is a widely used indicator to quantify vegetation health based on how the vegetation responds to light at the Near 
+			Infrared (NIR) and Red bands.</p>
 			</ul>
 
 			<p style="margin-left: 30px" align="justify">NDVI, which ranges in value from -1.0 to 1.0, is computed using this equation, <em>NDVI = (NIR - Red) / (NIR + Red)</em>. 
-			The figure below provides a visual interpretaion of NDVI values for healthy and unhealthy vegetations. </p>
+			The figure below provides a visual interpretation of NDVI values for healthy and unhealthy vegetations. </p>
 			""", unsafe_allow_html=True)
 		_, center_img, _ = st.columns((1,4,1))
 		center_img.image(r'./assets/ndvi.png')
@@ -974,10 +970,11 @@ def main():
 			<ul>
 			<li><strong>Data: <a href="https://developers.google.com/earth-engine/datasets/catalog/LANDSAT_LC08_C01_T1_8DAY_NDVI">Landsat 8 
 			Collection 1 Tier 1 8-Day NDVI Composite (30-meter resolution)</a></strong></li>
-			<p style="margin-left: 30px" align="justify">The primary data used to obtain NDVI values are derived from the 8-day NDVI Composite of Landsat 8 images. 
-			These composites are created from all the scenes in each 8-day period beginning from the first day of the year and continuing to the 360th day of the year. 
-			The last composite of the year, beginning on day 361, overlaps the first composite of the following year by 3 days. All the images from 
-			each 8-day period are included in the composite, with the most recent pixel as the composite value.</p>
+			<p style="margin-left: 30px" align="justify">The primary data used to get NDVI values are derived from the 8-day NDVI Composite 
+			of Landsat 8 images. These composites are created from all the scenes in each 8-day period beginning from the first day of the 
+			year and continuing to the 360th day of the year. The final composite of the year, beginning on day 361, overlaps the first 
+			composite of the following year by three (3) days. All the images from each 8-day period are included in the composite, with 
+			the most recent pixel as the composite value.</p>
 			</ul>
 
 			<ul >
