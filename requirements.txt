@@ -1,4 +1,4 @@
-streamlit == 0.86.0
+streamlit == 0.87.0
 geemap
 pandas
 numpy
