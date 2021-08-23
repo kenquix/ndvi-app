@@ -7,7 +7,7 @@ import json
 import base64
 import geemap
 import imageio
-
+from millify import millify
 import geopandas as gpd
 import shapely.wkt
 import shapely.geometry
@@ -103,7 +103,7 @@ def app():
         with st.spinner(text="Fetching data from GEE server..."):
             date_list = date_range(l8_ndvi_cloudless, aoi)
 
-        startdate, enddate = st.select_slider('DOI Slider', 
+        startdate, enddate = st.select_slider('Date Slider', 
             date_list.Timestamp.unique().tolist(), 
             value=[date_list.Timestamp.unique().tolist()[0], date_list.Timestamp.unique().tolist()[-1]],
             help="Use the slider to select the DOI's (start and end date)")
@@ -255,21 +255,36 @@ def app():
     results = np.polyfit(x,y, deg=1)
     slope, _ = results
     _, positive_change = diff_bin_norm
-    mean_ndvi = df.NDVI.mean()
+
+    mean_ndvi = df.loc[df.shape[0]-1,'NDVI']
+    diff_ndvi = mean_ndvi - df.loc[0,'NDVI']
 
     if slope > 0:
-        trending = 'Trending up'
+        trending = 'Up'
     else:
-        trending = '-Trending down'
+        trending = 'Down'
 
     metric1, metric2, metric3, metric4 = st.columns(4)
-    metric1.metric(f'Mean NDVI', f'{mean_ndvi:0.3f}', f'{trending}')
-    metric1.metric(f'Delta NDVI', f'{positive_change:0.2%}', f'Positive Change')
-    metric2.metric(f'Area of AOI', f'{aoi.geometry().area().getInfo()/10000:,.0f}', 'in hectares', delta_color='off')
-    metric2.metric(f'Days between', f'{(enddate - startdate).days:,}')
-    metric3.metric(f'Cloud Cover', f'{(hist_df.iloc[:,0] == 0).mean():0.2%}', f'{startdate_format}', delta_color='off')
-    metric3.metric(f'Landsat Images', f'{df.shape[0]}')
-    metric4.metric(f'Cloud Cover', f'{(hist_df.iloc[:,1] == 0).mean():0.2%}', f'{enddate_format}', delta_color='off')
+
+    with metric1:
+        st.metric(f'Mean NDVI', f'{mean_ndvi:0.3f}', f'{diff_ndvi:0.3f}')
+        st.metric(f'Pixel Difference', f'{positive_change:0.2%}', f'Positive Change', delta_color='off')
+    
+    with metric2:
+        st.metric('Trend', f'{trending}', f'{slope:0.2e}')
+        st.metric(f'Area (in has)', f'{millify(aoi.geometry().area().getInfo()/10000, precision=2)}', 
+                f'{millify(aoi.geometry().area().getInfo()/1000000, precision=2)} KM2', delta_color='off')
+
+    with metric3:
+        st.metric(f'Cloud Cover', f'{(hist_df.iloc[:,0] == 0).mean():0.2%}', 
+                f'{startdate_format}', delta_color='off')
+        st.metric(f'Days between', f'{millify((enddate - startdate).days, precision=2)}', 
+        f'{millify((enddate - startdate).days/365.25, precision=2)} years', delta_color='off')
+    
+    with metric4:
+        st.metric(f'Cloud Cover', f'{(hist_df.iloc[:,1] == 0).mean():0.2%}', 
+                f'{enddate_format}', delta_color='off')
+        st.metric(f'Landsat Images', f'{df.shape[0]}', f'~{0.919*df.shape[0]:0.2f} GB', delta_color='off')
 
     folium_static(my_map)
 
