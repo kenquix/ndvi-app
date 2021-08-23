@@ -26,6 +26,13 @@ st.markdown(f"""
     </style>
     """, unsafe_allow_html=True)
 
+make_map_responsive= """
+    <style>
+    [title~="st.iframe"] { width: 100%}
+    </style>
+    """
+st.markdown(make_map_responsive, unsafe_allow_html=True)
+
 app = MultiApp()
 
 # Add all your application here

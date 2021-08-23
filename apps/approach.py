@@ -19,7 +19,7 @@ def app():
         </ul>
 
         <p style="margin-left: 30px" align="justify">NDVI, which ranges in value from -1.0 to 1.0, is computed using the equation below, where NDVI
-        is equal to the ratio of the difference and sum of the Near-Infrared (NIR) and Red bands.</p>
+        is equal to the ratio of the difference and sum of the Near-Infrared (NIR) (reflectance at 0.86 <em>u</em>m) and Red bands (reflectance at 0.65 <em>u</em>m).</p>
         """, unsafe_allow_html=True)
 
     st.latex(r"NDVI = \frac{(NIR - Red)} {(NIR + Red)}")

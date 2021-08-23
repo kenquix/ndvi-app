@@ -1,43 +1,20 @@
 import os
 import ee
-# import json
 import base64
 import geemap
-# import imageio
-# import zipfile
-# import geopandas as gpd
-# import shapely.wkt
-# import shapely.geometry
-# import ast
-# import fiona
-# from PIL import Image
-# from PIL import ImageFont
-# from PIL import ImageDraw 
-import streamlit as st
 
+import streamlit as st
 import pandas as pd
 import numpy as np
-# import altair as alt
-# from fpdf import FPDF
-# from html2image import Html2Image
-from datetime import timedelta, datetime
 
-# import streamlit.components.v1 as components
-# from streamlit.uploaded_file_manager import UploadedFile
+from datetime import timedelta, datetime
 from streamlit_folium import folium_static
 
 import statsmodels.api as sm
-
 from statsmodels.nonparametric.smoothers_lowess import lowess
-# from statsmodels.tsa.stattools import adfuller
 
 import folium
-# from folium import plugins
 
-# from keplergl import KeplerGl
-# import time
-
-# Add custom basemaps to folium
 basemaps = {
     'Google Maps': folium.TileLayer(
         tiles = 'https://mt1.google.com/vt/lyrs=m&x={x}&y={y}&z={z}',
@@ -75,7 +52,6 @@ basemaps = {
         control = True
     )}
 
-# Define a method for displaying Earth Engine image tiles on a folium map.
 def add_ee_layer(self, ee_object, vis_params, name):
     
     try:    
@@ -96,6 +72,18 @@ def add_ee_layer(self, ee_object, vis_params, name):
 # Add EE drawing method to folium.
 folium.Map.add_ee_layer = add_ee_layer
 
+@st.cache()
+def cloudlessNDVI(image):
+    cloud = ee.Algorithms.Landsat.simpleCloudScore(image).select('cloud')
+    mask = cloud.lte(20)
+    ndvi = image.normalizedDifference(['B5', 'B4']).rename('NDVI')
+    return image.addBands(ndvi).updateMask(mask)
+
+def cloud_mask(image):
+    cloud = ee.Algorithms.Landsat.simpleCloudScore(image).select('cloud')
+    mask = cloud.lte(20)
+    return mask
+			
 @st.cache(allow_output_mutation=True, suppress_st_warning=True, show_spinner=False)
 def read_data(l8, startdate, enddate, aoi, datamask):
 	start1 = startdate.strftime('%Y-%m-%d')
@@ -108,9 +96,9 @@ def read_data(l8, startdate, enddate, aoi, datamask):
 	start_img = l8.select('NDVI').filterDate(start1, start2).first().unmask()
 	end_img = l8.select('NDVI').filterDate(end1, end2).first().unmask()
 	
-	start_img = start_img.reproject(crs=ee.Projection('EPSG:3395'), scale=scale)
-	end_img = end_img.reproject(crs=ee.Projection('EPSG:3395'), scale=scale)
-
+	# start_img = start_img.reproject(crs=ee.Projection('EPSG:3395'), scale=scale)
+	# end_img = end_img.reproject(crs=ee.Projection('EPSG:3395'), scale=scale)
+	
 	diff_img = end_img.subtract(start_img)
 
 	classes = ['Soil/Water', 'Very Low', 'Low', 
@@ -167,7 +155,7 @@ def read_data(l8, startdate, enddate, aoi, datamask):
 
 	df = pd.read_csv(out_stats)
 	df = pd.melt(df, id_vars=['system:index'])
-	df.variable = df.variable.apply(lambda x: x[:8])
+	df.variable = df.variable.apply(lambda x: x[12:20])
 	df = df.rename(columns={'value':'NDVI', 'variable':'Timestamp', 'system:index':'Default'})
 
 	df['DOY'] = pd.DatetimeIndex(df['Timestamp']).dayofyear
@@ -190,6 +178,15 @@ def read_data(l8, startdate, enddate, aoi, datamask):
 	df['Standard'] = (df.NDVI - df.NDVI.mean())/df.NDVI.std()
 	df.reset_index(drop=True, inplace=True)
 
+	start_img = cloudlessNDVI(l8.filterDate(start1, start2).first()).select('NDVI')
+	end_img = cloudlessNDVI(l8.filterDate(end1, end2).first()).select('NDVI')
+
+	start_mask = cloud_mask(l8.filterDate(start1, start2).first())
+	end_mask = cloud_mask(l8.filterDate(end1, end2).first())
+
+	diff_img = diff_img.updateMask(start_mask)
+	diff_img = diff_img.updateMask(end_mask)
+
 	return df, tabular_df, start_img.updateMask(datamask), end_img.updateMask(datamask), diff_img.updateMask(datamask), diff_bin_norm, hist_df
 
 @st.cache(show_spinner=False)
@@ -207,7 +204,8 @@ def date_range(l8, aoi):
 
 	df = pd.read_csv(out_stats)
 	df = pd.melt(df, id_vars=['system:index'])
-	df.variable = df.variable.apply(lambda x: x[:8])
+	# df.variable = df.variable.apply(lambda x: x[:8]) # for 8-day L8 NDVI composite
+	df.variable = df.variable.apply(lambda x: x[12:20])
 	df = df.rename(columns={'value':'NDVI', 'variable':'Timestamp', 'system:index':'Default'})
 
 	df['Timestamp'] = pd.DatetimeIndex(df['Timestamp']).date
@@ -224,6 +222,6 @@ def transform(df):
 	dfm.reset_index(inplace=True)
 	return dfm
 
-def create_download_link(val, filename):
-    b64 = base64.b64encode(val)  # val looks like b'...'
-    return f'<a href="data:application/octet-stream;base64,{b64.decode()}" download="{filename}.pdf">Download file</a>'
+# def create_download_link(val, filename):
+#     b64 = base64.b64encode(val)  # val looks like b'...'
+#     return f'<a href="data:application/octet-stream;base64,{b64.decode()}" download="{filename}.pdf">Download file</a>'

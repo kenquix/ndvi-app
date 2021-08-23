@@ -7,42 +7,29 @@ import json
 import base64
 import geemap
 import imageio
-# import zipfile
+
 import geopandas as gpd
 import shapely.wkt
 import shapely.geometry
 import ast
-# import fiona
-from PIL import Image
-# from PIL import ImageFont
-from PIL import ImageDraw 
-import streamlit as st
 
-import pandas as pd
-import numpy as np
+from PIL import Image
+from PIL import ImageDraw 
+
 import altair as alt
-# from fpdf import FPDF
-# from html2image import Html2Image
-# from datetime import timedelta, datetime
 
 import streamlit.components.v1 as components
-# from streamlit.uploaded_file_manager import UploadedFile
 from streamlit_folium import folium_static
 
-# import statsmodels.api as sm
-
 from statsmodels.nonparametric.smoothers_lowess import lowess
-# from statsmodels.tsa.stattools import adfuller
 
 import folium
 from folium import plugins
 
-# from keplergl import KeplerGl
-# import time
-
 from utils.utils import *
 
 def app():
+    Map = geemap.Map()
     st.image(r'./assets/header.jpg', use_column_width=True)
     st.title('Vegetation Assessment and Monitoring App')
     st.subheader('A. Data Collection')
@@ -65,8 +52,6 @@ def app():
 
         inputRegion = st.text_input(f'Paste AOI coordinates here and press Enter:', 
                                 help='Currently, only GeoJSON formatted AOI is accepted')
-
-        Map = geemap.Map()
 
         default_region = '[[[125.4727148947,8.9012996164],\
                             [125.5990576681,8.9012996164],\
@@ -99,28 +84,24 @@ def app():
             st.error(f'Error: Expected a different input. Make sure you selected the GEOJSON format.')
             return
 
-        l8 = ee.ImageCollection('LANDSAT/LC08/C01/T1_8DAY_NDVI')
-        aoi = ee.FeatureCollection(ee.Geometry.Polygon(data))
-        datamask = ee.Image('UMD/hansen/global_forest_change_2015').select('datamask').eq(1)
-        lon, lat = aoi.geometry().centroid().getInfo()['coordinates']
-        
-        st.markdown(f"""
-            Area of AOI is **{aoi.geometry().area().getInfo()/10000:,.02f} has**. The centroid is 
-            located at **({lat:.02f} N, {lon:.02f} E)**.
-            """)
+    aoi = ee.FeatureCollection(ee.Geometry.Polygon(data))
+    datamask = ee.Image('UMD/hansen/global_forest_change_2015').select('datamask').eq(1)
+    lon, lat = aoi.geometry().centroid().getInfo()['coordinates']
+    l8 = ee.ImageCollection('LANDSAT/LC08/C01/T1_TOA').filterBounds(aoi) # 32DAY_NDVI
+    l8_ndvi_cloudless = l8.map(cloudlessNDVI)
     
     with st.container():		
-        st.subheader('B. Map Visualization')
-        with st.expander('', expanded=True):
-            st.markdown(f"""
-            1. Use the slider widget to select the DOI.<br>
-            2. Wait for the app to load the NDVI composite images available for the AOI and DOI.
-            3. Explore the layers.
-            4. Generate timelapse of Annual Landsat composites (Convert to NDVI)
-            """, unsafe_allow_html=True)
+        st.subheader('B. Dashboard')
+        # with st.expander('', expanded=True):
+        #     st.markdown(f"""
+        #     1. Use the slider widget to select the DOI.<br>
+        #     2. Wait for the app to load the NDVI composite images available for the AOI and DOI.
+        #     3. Explore the layers.
+        #     4. Generate timelapse of Annual Landsat composites (Convert to NDVI)
+        #     """, unsafe_allow_html=True)
 
         with st.spinner(text="Fetching data from GEE server..."):
-            date_list = date_range(l8, aoi)
+            date_list = date_range(l8_ndvi_cloudless, aoi)
 
         startdate, enddate = st.select_slider('DOI Slider', 
             date_list.Timestamp.unique().tolist(), 
@@ -131,10 +112,10 @@ def app():
         enddate_format = enddate.strftime('%B %d, %Y')
 
         with st.spinner(text="Fetching data from GEE server..."):
-            df, report_df, start_img, end_img, diff_img, diff_bin_norm, hist_df = read_data(l8, startdate, enddate, aoi, datamask)
+            df, report_df, start_img, end_img, diff_img, diff_bin_norm, hist_df = read_data(l8_ndvi_cloudless, startdate, enddate, aoi, datamask)
             df['Timestamp'] = pd.to_datetime(df.Timestamp)
             df_annual = transform(df)
-                        
+
         visParams = {
             'min': 0,
             'max': 1,
@@ -156,10 +137,9 @@ def app():
             }
 
         # Create a folium map object.
-        my_map = folium.Map(location=[lat, lon], zoom_start=12)
+        my_map = folium.Map(location=[lat, lon], zoom_start=13)
 
         # Add custom basemaps
-        # basemaps['Google Maps'].add_to(my_map)
         basemaps['Google Satellite Hybrid'].add_to(my_map)
 
         my_map.add_ee_layer(diff_img.clip(aoi.geometry()), visParams_diff, 'Difference Image')
@@ -174,73 +154,9 @@ def app():
         plugins.Fullscreen().add_to(my_map)
         plugins.MiniMap().add_to(my_map)
 
-        make_map_responsive= """
-            <style>
-            [title~="st.iframe"] { width: 100%}
-            </style>
-            """
-        st.markdown(make_map_responsive, unsafe_allow_html=True)
-        folium_static(my_map)
-
-        st.image(r'./assets/scale.png', use_column_width=True)
-
-        with st.spinner(text="Fetching data from GEE server... Generating timelapse animation..."):
-            with st.expander('Timelapse of Annual NDVI Composite Images'):
-                timelapse = st.checkbox('Check to generate the animation.')
-                
-                if timelapse:
-                    out_dir = os.path.join(os.path.expanduser('~'), 'assets')
-
-                    if not os.path.exists(out_dir):
-                        os.makedirs(out_dir)
-
-                    # out_gif = os.path.join(out_dir, 'landsat_ndvi_ts.gif')
-
-                    # add bands for DOY and Year
-                    def add_doy(img):
-                        doy = ee.Date(img.get('system:time_start')).getRelative('day', 'year')
-                        return img.set('doy', doy)
-                    
-                    def add_year(img):
-                        year = ee.Date(img.get('system:time_start')).get('year')
-                        return img.set('year', year)
-                    
-                    l8 = l8.map(add_doy)
-                    l8 = l8.map(add_year)
-
-                    filenames = []
-                    images = []
-                    region = aoi.geometry().bounds()
-
-                    for i in range(startdate.year, enddate.year + 1):
-                        timelapse_dir = os.path.join(zip_dir, f'landsat_{i}.png')
-                        fcol = l8.filterMetadata('year', 'equals', i).reduce(ee.Reducer.median()).clip(aoi).updateMask(datamask)
-                        geemap.get_image_thumbnail(fcol, timelapse_dir, visParams, region=region, dimensions=500, format='png')
-                        img = Image.open(timelapse_dir)
-                        draw = ImageDraw.Draw(img)
-                        draw.text((0,0), f'Year {i}')
-                        img.save(timelapse_dir)
-                        filenames.append(timelapse_dir)
-
-                    for filename in filenames:
-                        images.append(imageio.imread(filename))
-                    
-                    imageio.mimsave(os.path.join(zip_dir, 'landsat_ndvi_ts.gif'), images, fps=1)
-
-                    file_ = open(os.path.join(zip_dir, 'landsat_ndvi_ts.gif'), "rb")
-                    contents = file_.read()
-                    data_url = base64.b64encode(contents).decode("utf-8")
-                    file_.close()
-                    
-                    st.markdown(f"""<center><img src="data:image/gif;base64,{data_url}" alt="timelapse gif"></center>""",
-                        unsafe_allow_html=True)
-
-                st.markdown('<br>', unsafe_allow_html=True)			
-
-    st.markdown('---')
-    st.subheader('C. Data Analytics')
-    highlightA = alt.selection(
-    type='single', on='mouseover', fields=['Year'], nearest=True)
+    # st.markdown('---')
+    # st.subheader('C. Data Analytics and Visualization')
+    highlightA = alt.selection(type='single', on='mouseover', fields=['Year'], nearest=True)
 
     baseC = alt.Chart(df).encode(
         x=alt.X('Timestamp:T', title=None),
@@ -266,7 +182,7 @@ def app():
     altAA = (pointsC + linesC + regC).interactive(bind_y=False)
 
     baseB = alt.Chart(df).encode(
-        x=alt.X('DOY:Q', scale=alt.Scale(domain=(0, 340))))
+        x=alt.X('DOY:Q', scale=alt.Scale(domain=(0, 340)), title='DOY'))
 
     lower = df.groupby('DOY')['NDVI'].quantile(.25).min()
     upper = df.groupby('DOY')['NDVI'].quantile(.75).max()
@@ -274,19 +190,57 @@ def app():
     lineB = baseB.mark_line().encode(
         y=alt.Y('median(NDVI):Q', 
             scale=alt.Scale(domain=[lower,upper])
-            )
+            ),
+        
         )
-    bandB = baseB.mark_errorband(extent='iqr').encode(
+
+    rainy_df = pd.DataFrame({
+        'x1': [152],
+        'x2': [334]
+    })
+
+    rainy_season = alt.Chart(rainy_df).mark_rect(
+        opacity=0.2, color='#A5DCFF'
+            ).encode(
+                x=alt.X('x1', title=''),
+                x2='x2',
+                y=alt.value(0),  # 0 pixels from top
+                y2=alt.value(300)  # 300 pixels from top
+                
+            )
+
+    dry_df = pd.DataFrame({
+        'x1': [0, 334],
+        'x2': [152, 360]
+    })
+
+    dry_season1 = alt.Chart(dry_df).mark_rect(
+        opacity=0.2, color='#b47e4f'
+            ).encode(
+                x=alt.X('x1', title=''),
+                x2='x2',
+                y=alt.value(0),  # 0 pixels from top
+                y2=alt.value(300),  # 300 pixels from top
+            )
+
+    bandB = baseB.mark_errorband(extent='iqr', color='#3D3D45', opacity=0.3).encode(
             y='NDVI:Q')
 
-    altB = (lineB + bandB).interactive()
+    pointsB = baseB.mark_circle().encode(
+        opacity=alt.value(0),
+        tooltip=[
+            alt.Tooltip('DOY:Q', title='DOY'),
+            alt.Tooltip('median(NDVI):Q', title='NDVI')
+        ]).add_selection(highlightA)
+
+    altB = (lineB + bandB + pointsB + rainy_season + dry_season1).interactive()
 
     start_lower = hist_df[f'{startdate}'].quantile(.25).min()
     start_upper = hist_df[f'{startdate}'].quantile(.75).max()
     end_lower = hist_df[f'{enddate}'].quantile(.25).min()
     end_upper = hist_df[f'{enddate}'].quantile(.75).max()
     
-    altC = alt.Chart(hist_df).transform_fold([f'{startdate}', f'{enddate}'], as_=['Dates', 'NDVI']
+    altC = alt.Chart(hist_df[(hist_df.iloc[:,0] != 0) & (hist_df.iloc[:,1] != 0)]).transform_fold([f'{startdate}', f'{enddate}'], as_=['Dates', 'NDVI']
         ).mark_area( opacity=0.3, interpolate='step').encode(
             x=alt.X('NDVI:Q', bin=alt.Bin(maxbins=200)),
             y=alt.Y('count()', stack=None),
@@ -304,21 +258,90 @@ def app():
     mean_ndvi = df.NDVI.mean()
 
     if slope > 0:
-        trending = 'UP'
+        trending = 'Trending up'
     else:
-        trending =' DOWN'
+        trending = '-Trending down'
 
-    st.write(' ')
-    st.info(f"""Overall, mean NDVI for the *selected AOI* and *dates* is **{mean_ndvi:0.3f}** and is **trending {trending}!** 📈 and \
-                the areas where a **positive NDVI change** is observed is at **{positive_change:0.2%}**!
-                \nSelected dates: **{startdate_format} - {enddate_format}**   
-                Number of days between selected dates: **{(enddate - startdate).days:,} days**    
-                Number of images available between the selected dates: **{df.shape[0]}**   
-                """)
+    metric1, metric2, metric3, metric4 = st.columns(4)
+    metric1.metric(f'Mean NDVI', f'{mean_ndvi:0.3f}', f'{trending}')
+    metric1.metric(f'Delta NDVI', f'{positive_change:0.2%}', f'Positive Change')
+    metric2.metric(f'Area of AOI', f'{aoi.geometry().area().getInfo()/10000:,.0f}', 'in hectares', delta_color='off')
+    metric2.metric(f'Days between', f'{(enddate - startdate).days:,}')
+    metric3.metric(f'Cloud Cover', f'{(hist_df.iloc[:,0] == 0).mean():0.2%}', f'{startdate_format}', delta_color='off')
+    metric3.metric(f'Landsat Images', f'{df.shape[0]}')
+    metric4.metric(f'Cloud Cover', f'{(hist_df.iloc[:,1] == 0).mean():0.2%}', f'{enddate_format}', delta_color='off')
+
+    folium_static(my_map)
+
+    st.image(r'./assets/scale.png', use_column_width=True)
+
+    with st.spinner(text="Fetching data from GEE server... Generating timelapse animation..."):
+        with st.expander('Timelapse of Annual NDVI Composite Images'):
+            timelapse = st.checkbox('Check to generate the animation.')
+            
+            if timelapse:
+                out_dir = os.path.join(os.path.expanduser('~'), 'assets')
+
+                if not os.path.exists(out_dir):
+                    os.makedirs(out_dir)
+
+                # out_gif = os.path.join(out_dir, 'landsat_ndvi_ts.gif')
+
+                # add bands for DOY and Year
+                def add_doy(img):
+                    doy = ee.Date(img.get('system:time_start')).getRelative('day', 'year')
+                    return img.set('doy', doy)
+                
+                def add_year(img):
+                    year = ee.Date(img.get('system:time_start')).get('year')
+                    return img.set('year', year)
+                
+                l8_ndvi_cloudless = l8_ndvi_cloudless.map(add_doy)
+                l8_ndvi_cloudless = l8_ndvi_cloudless.map(add_year)
+
+                filenames = []
+                images = []
+                region = aoi.geometry().bounds()
+                l8_ndvi_cloudless = l8_ndvi_cloudless.select('NDVI')
+                
+                for i in range(startdate.year, enddate.year + 1):
+                    timelapse_dir = os.path.join(zip_dir, f'landsat_{i}.png')
+                    fcol = l8_ndvi_cloudless.filterMetadata('year', 'equals', i).reduce(ee.Reducer.median()).clip(aoi).updateMask(datamask)
+                    geemap.get_image_thumbnail(fcol, timelapse_dir, visParams, region=region, dimensions=500, format='png')
+                    img = Image.open(timelapse_dir)
+                    draw = ImageDraw.Draw(img)
+                    draw.text((0,0), f'Year {i}')
+                    img.save(timelapse_dir)
+                    filenames.append(timelapse_dir)
+
+                for filename in filenames:
+                    images.append(imageio.imread(filename))
+                
+                imageio.mimsave(os.path.join(zip_dir, 'landsat_ndvi_ts.gif'), images, fps=1)
+
+                file_ = open(os.path.join(zip_dir, 'landsat_ndvi_ts.gif'), "rb")
+                contents = file_.read()
+                data_url = base64.b64encode(contents).decode("utf-8")
+                file_.close()
+                
+                st.markdown(f"""<center><img src="data:image/gif;base64,{data_url}" alt="timelapse gif"></center>""",
+                    unsafe_allow_html=True)
+
+            st.markdown('<br>', unsafe_allow_html=True)			
+
+    # st.write('')
+    # st.info(f"""Overall, mean NDVI for the *selected AOI* and *dates* is **{mean_ndvi:0.3f}** and is **trending {trending}!** 📈 and \
+    #             the areas where a **positive NDVI change** is observed is at **{positive_change:0.2%}**!
+    #             \nSelected dates: **{startdate_format} - {enddate_format}**   
+    #             Number of days between selected dates: **{(enddate - startdate).days:,} days**    
+    #             Number of images available between the selected dates: **{df.shape[0]}**    
+    #             Area of AOI is **{aoi.geometry().area().getInfo()/10000:,.02f} has**. Centroid is located at **({lat:.02f} N, {lon:.02f} E)**.    
+    #             """)
 
     decrease_list = list(report_df[report_df.Interpretation.isin(['Decrease'])].index)
     increase_list = list(report_df[report_df.Interpretation.isin(['Increase'])].index)
 
+    st.subheader('C. Data Analytics and Visualization')
     st.markdown('Table 1. Area (in hectares) and Percent Change between Selected Dates across NDVI classes')
 
     st.dataframe(report_df)
@@ -330,8 +353,9 @@ def app():
         <font color="#2D8532"><strong>{', '.join(increase_list)}</strong></font> while we observed a <font color="#A42F25"><strong>decrease</strong></font> in the following classes: 
         <font color="#A42F25"><strong>{', '.join(decrease_list)}</strong></font>.</p>
         """, unsafe_allow_html=True)
-    st.markdown('---')
-    st.subheader('D. Visual EDA')
+
+    # st.markdown('---')
+    
     st.altair_chart(altC, use_container_width=True)
     st.markdown(f'<center>Figure 1. Distribution of NDVI values for images of selected dates</center><br>', unsafe_allow_html=True)
 
@@ -352,6 +376,7 @@ def app():
                         options=['Inter-quartile Range', 'Confidence Interval', 
                         'Standard Error', 'Standard Deviation'],
                         help='Defines the extent of the colored region')
+
     standardized = st.checkbox('Click to standardize')
     rule_option_dict = {'Mean': 'mean', 'Median': 'median', 'Maximum': 'max', 'Minimum': 'min'}
     band_option_dict = {'Inter-quartile Range': 'iqr', 'Confidence Interval': 'ci', 
@@ -377,9 +402,7 @@ def app():
             )
         
         rule = alt.Chart(df).mark_rule(color='red').encode(
-            y=alt.Y('mean(Standard):Q'),
-            tooltip=[alt.Tooltip(f'mean(Standard):Q', 
-            title=f'{rule_option} NDVI Line', format=',.4f')])
+            y=alt.Y('mean(Standard):Q'))
 
         altA = (linesA + rule).interactive(bind_y=False)
 
@@ -399,7 +422,7 @@ def app():
             size=alt.condition(~highlightA, alt.value(1), alt.value(3)),
             color=alt.Color('Year:O', scale=alt.Scale(scheme='viridis'), legend=None)
             )
-
+            
         rule = alt.Chart(df).mark_rule(color='red').encode(
             y=alt.Y(f'{rule_option_dict[rule_option]}(NDVI):Q'),
             tooltip=[alt.Tooltip(f'{rule_option_dict[rule_option]}(NDVI):Q', 
@@ -502,6 +525,8 @@ def app():
 
         <p align="justify">The largest variation in NDVI values is observed on the <strong>{var_max_day}{var_max_str} day </strong>of the year, while the 
         smallest variation is observed on the <strong>{var_min_day}{var_min_str} day</strong>.</p>
+
+        The two (2) colored regions correspond to the dry (orange) and wet (blue) season.
         """, unsafe_allow_html=True)
 
     st.markdown('---')
