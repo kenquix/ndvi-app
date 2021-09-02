@@ -20,7 +20,7 @@ import altair as alt
 
 import streamlit.components.v1 as components
 from streamlit_folium import folium_static
-import extra_streamlit_components as stx
+# import extra_streamlit_components as stx
 
 from statsmodels.nonparametric.smoothers_lowess import lowess
 
