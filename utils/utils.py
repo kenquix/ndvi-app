@@ -92,7 +92,7 @@ def read_data(l8, startdate, enddate, aoi, datamask, cloud_score):
 	end2 = (enddate+timedelta(1)).strftime('%Y-%m-%d')
 
 	area = aoi.geometry().area().getInfo()/10000
-	scale = 100
+	scale = 1000
 	start_img = l8.select('NDVI').filterDate(start1, start2).first().unmask()
 	end_img = l8.select('NDVI').filterDate(end1, end2).first().unmask()
 	

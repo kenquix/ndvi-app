@@ -6,11 +6,8 @@ def app():
     st.markdown('---')
     st.markdown(f"""
         <p align="justify">To address the challenge, the team developed a web app that aims to provide information that can 
-        complement the efforts of our decision-makers in monitoring the overall vegetation health of an area, including our 
+        complement the efforts of our decision-makers in monitoring the overall vegetation health of an area, especially our 
         forest ecosystems. The app uses freely available remotely sensed derived information from satellite images from 2013 - present.</p>
-
-        <p align="justify"><em><font color="#85221A">Note: The information presented in this app 
-        serves as a guide only. Ground validation should still be conducted to verify its accuracy.</font></em></p> 
 
         <ul>
         <li><strong>Indicator: <a href="https://gisgeography.com/ndvi-normalized-difference-vegetation-index/">Normalized Difference Vegetation Index (NDVI)</a></strong></li>

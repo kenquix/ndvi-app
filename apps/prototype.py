@@ -554,6 +554,9 @@ def app():
         smallest variation is observed on the <strong>{var_min_day}{var_min_str} day</strong>.</p>
 
         The two (2) colored regions correspond to the dry (orange) and wet (blue) season.
+
+        <p align="justify"><em><font color="#85221A">Note: The information presented in this app 
+        serves as a guide only. Ground validation should still be conducted to verify its accuracy.</font></em></p> 
         """, unsafe_allow_html=True)
 
     st.markdown('---')
