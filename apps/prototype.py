@@ -270,20 +270,27 @@ def app():
 
     mean_ndvi = df.loc[df.shape[0]-1,'NDVI']
     diff_ndvi = mean_ndvi - df.loc[0,'NDVI']
-
-    if slope > 0:
-        trending = 'Up'
-    else:
-        trending = 'Down'
-
+    
     metric1, metric2, metric3, metric4 = st.columns(4)
 
     with metric1:
-        st.metric(f'Mean NDVI', f'{mean_ndvi:0.3f}', f'{diff_ndvi:0.3f}')
+        if diff_ndvi > 0:
+            delta_mean = f'↑ {diff_ndvi:0.3f}'
+        else: 
+            delta_mean = f'{diff_ndvi:0.3f} ↓'
+
+        st.metric(f'Mean NDVI', f'{mean_ndvi:0.3f}', delta_mean)
         st.metric(f'Pixel Difference', f'{positive_change:0.2%}', f'Positive Change', delta_color='off')
     
     with metric2:
-        st.metric('Trend', f'{trending}', f'{slope:0.2e}')
+        if slope > 0:
+            trending = 'Up'
+            delta_slope = f'↑ {slope:0.2e}'
+        else:
+            trending = 'Down'
+            delta_slope = f'{slope:0.2e} ↓'
+
+        st.metric('Trend', f'{trending}', delta_slope)
         st.metric(f'Area (in has)', f'{millify(aoi.geometry().area().getInfo()/10000, precision=2)}', 
                 f'{millify(aoi.geometry().area().getInfo()/1000000, precision=2)} KM2', delta_color='off')
 
@@ -483,7 +490,7 @@ def app():
     st.markdown(f"""
         <p align="justify">Figure 3 shows a smoothed version of the time-series plot that lessens the variations between time steps, 
         removes noise and easily visualizes the underlying trend. Given this, we can observe that the red line which corresponds to
-        the best-fit line of the series is <strong>trending {trending}</strong>.</p>
+        the best-fit line of the series is <strong>trending {trending}</strong>.</p><br>
         """, unsafe_allow_html=True)
     
     st.altair_chart(altB, use_container_width=True)

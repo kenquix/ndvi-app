@@ -53,7 +53,7 @@ def app():
     center_img.image(r'./assets/flowchart.png')
     st.markdown(f"""
         <li style="list-style-type:square" align="justify"><em>Data acquistion</em> - the Landsat 8 NDVI Composites are accessed from the Google Earth Engine repository.</li>
-        <li style="list-style-type:square" align="justify"><em>Data filtering</em> - the satellite images are filtered spatially and temporally based on user input. If no input provided, 
+        <li style="list-style-type:square" align="justify"><em>Data filtering</em> - the satellite images are filtered spatially, and temporally based on user input. If no input is provided, 
         the web app will show default area of interest (AOI), set in Butuan City from 2013 - present.</li>
         <li style="list-style-type:square" align="justify"><em>Data Wrangling</em> - the raw images are aggregated, spatially and temporally, into mean NDVI, per available date.</li>
         <li style="list-style-type:square" align="justify"><em>Data Analysis</em> - the difference between NDVI values between the earliest and latest available images are obtained. 

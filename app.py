@@ -30,6 +30,12 @@ make_map_responsive= """
     <style>
     [title~="st.iframe"] { width: 100%}
     </style>
+
+    <style>
+    [data-testid="stMetricDelta"] svg {
+        display: none;
+    }
+    </style>
     """
 st.markdown(make_map_responsive, unsafe_allow_html=True)
 
