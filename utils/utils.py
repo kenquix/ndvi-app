@@ -73,19 +73,19 @@ def add_ee_layer(self, ee_object, vis_params, name):
 folium.Map.add_ee_layer = add_ee_layer
 
 @st.cache()
-def cloudlessNDVI(image):
+def cloudlessNDVI(image, cloud_score=20):
     cloud = ee.Algorithms.Landsat.simpleCloudScore(image).select('cloud')
-    mask = cloud.lte(20)
+    mask = cloud.lte(cloud_score)
     ndvi = image.normalizedDifference(['B5', 'B4']).rename('NDVI')
     return image.addBands(ndvi).updateMask(mask)
 
-def cloud_mask(image):
+def cloud_mask(image, cloud_score=20):
     cloud = ee.Algorithms.Landsat.simpleCloudScore(image).select('cloud')
-    mask = cloud.lte(20)
+    mask = cloud.lte(cloud_score)
     return mask
 			
 @st.cache(allow_output_mutation=True, suppress_st_warning=True, show_spinner=False)
-def read_data(l8, startdate, enddate, aoi, datamask):
+def read_data(l8, startdate, enddate, aoi, datamask, cloud_score):
 	start1 = startdate.strftime('%Y-%m-%d')
 	start2 = (startdate+timedelta(1)).strftime('%Y-%m-%d')
 	end1 = enddate.strftime('%Y-%m-%d')
@@ -178,11 +178,11 @@ def read_data(l8, startdate, enddate, aoi, datamask):
 	df['Standard'] = (df.NDVI - df.NDVI.mean())/df.NDVI.std()
 	df.reset_index(drop=True, inplace=True)
 
-	start_img = cloudlessNDVI(l8.filterDate(start1, start2).first()).select('NDVI')
-	end_img = cloudlessNDVI(l8.filterDate(end1, end2).first()).select('NDVI')
+	start_img = cloudlessNDVI(l8.filterDate(start1, start2).first(), cloud_score).select('NDVI')
+	end_img = cloudlessNDVI(l8.filterDate(end1, end2).first(), cloud_score).select('NDVI')
 
-	start_mask = cloud_mask(l8.filterDate(start1, start2).first())
-	end_mask = cloud_mask(l8.filterDate(end1, end2).first())
+	start_mask = cloud_mask(l8.filterDate(start1, start2).first(), cloud_score)
+	end_mask = cloud_mask(l8.filterDate(end1, end2).first(), cloud_score)
 
 	diff_img = diff_img.updateMask(start_mask)
 	diff_img = diff_img.updateMask(end_mask)

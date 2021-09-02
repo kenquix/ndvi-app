@@ -42,13 +42,8 @@ def app():
         <li style="list-style-type:square">High Vegetation: 0.8 to 1.0 (inclusive)</li></ul></p>
 
         <ul>
-        <li><strong>Data: <a href="https://developers.google.com/earth-engine/datasets/catalog/LANDSAT_LC08_C01_T1_8DAY_NDVI">Landsat 8 
-        Collection 1 Tier 1 8-Day NDVI Composite (30-meter resolution)</a></strong></li>
-        <p style="margin-left: 30px" align="justify">The primary data used to get NDVI values are derived from the 8-day NDVI Composite 
-        of Landsat 8 images. These composites are created from all the scenes in each 8-day period beginning from the first day of the 
-        year and continuing to the 360th day of the year. The final composite of the year, beginning on day 361, overlaps the first 
-        composite of the following year by three (3) days. All the images from each 8-day period are included in the composite, with 
-        the most recent pixel as the composite value.</p>
+        <li><strong>Data: <a href="https://developers.google.com/earth-engine/datasets/catalog/LANDSAT_LC08_C01_T1_TOA">USGS Landsat 8 Collection 1 Tier 1 TOA Reflectance (30-meter resolution)</a></strong></li>
+        <p style="margin-left: 30px" align="justify">The primary data used to get NDVI values are derived from the Landsat 8 calibrated Top of Atmosphere reflectance.</p>
         </ul>
 
         <ul >
@@ -75,7 +70,7 @@ def app():
         <br>
         <h3>Resources:</h3>
         <ul>
-        <li><a href=https://developers.google.com/earth-engine/datasets/catalog/LANDSAT_LC08_C01_T1_8DAY_NDVI?hl=en#terms-of-use>Landsat 8 Collection 1 Tier 1 8-Day NDVI Composite.</a> (2021). Retrieved {now}</li>
+        <li><a href=https://developers.google.com/earth-engine/datasets/catalog/LANDSAT_LC08_C01_T1_TOA>USGS Landsat 8 Collection 1 Tier 1 TOA Reflectance.</a> (2021). Retrieved {now}</li>
         <li><a href="https://developers.google.com/earth-engine/tutorials/community/time-series-visualization-with-altair">Time Series Visualization with Altair</a> | Google Earth Engine. (2021). Retrieved {now}</li>
         <li><a href="https://boundingbox.klokantech.com/">Bounding Box Tool</a>. (2021). Retrieved {now}</li>
         <li>Aquino, D., Rocha Neto, O., Moreira, M., Teixeira, A., & Andrade, E. (2018). Use of remote sensing to identify areas at risk of degradation in the semi-arid region. 49(3). 

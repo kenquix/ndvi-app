@@ -20,6 +20,7 @@ import altair as alt
 
 import streamlit.components.v1 as components
 from streamlit_folium import folium_static
+import extra_streamlit_components as stx
 
 from statsmodels.nonparametric.smoothers_lowess import lowess
 
@@ -32,13 +33,19 @@ def app():
     Map = geemap.Map()
     st.image(r'./assets/header.jpg', use_column_width=True)
     st.title('Vegetation Assessment and Monitoring App')
+    # tab_id = stx.tab_bar(data=[
+    #     stx.TabBarItemData(id=1, title="Data Collection", description=""),
+    #     stx.TabBarItemData(id=2, title="Dashboard", description=""),
+    #     stx.TabBarItemData(id=3, title="Data Analytics", description=""),
+    # ], default=2)
+    
     st.subheader('A. Data Collection')
     with st.expander('', expanded=True):
         st.markdown(f"""
             <p align="justify">Select an Area of Interest (AOI) by either <strong>(a) uploading a local file</strong> (*.KML format) or <strong>(b) drawing a bounding box</strong>.</p> 
             """, unsafe_allow_html=True)	
         inputFile = st.file_uploader('a. Upload a file', type=['kml'],
-                                help='Currently, only KML format AOI is accepted. ')
+                                help='Currently, only KML format AOI is accepted.')
         st.markdown('<p style="font-size:13px">b. Draw a bounding box</p>', unsafe_allow_html=True)
         st.markdown(f"""
             <ul>
@@ -50,8 +57,13 @@ def app():
             """, unsafe_allow_html=True)
         components.iframe('https://boundingbox.klokantech.com/', height=500)
 
+        # dc1, dc2 = st.columns((3.5,1.5))
+        # with dc1:
         inputRegion = st.text_input(f'Paste AOI coordinates here and press Enter:', 
-                                help='Currently, only GeoJSON formatted AOI is accepted')
+                            help='Currently, only GeoJSON formatted AOI is accepted')
+        # with dc2:
+        #     cloud_score = st.number_input('Select cloud mask value', 0, 100, 20, 1, 
+        #     help='Computes a simple cloud-likelihood score in the range [0,100]. Default is 20')
 
         default_region = '[[[125.4727148947,8.9012996164],\
                             [125.5990576681,8.9012996164],\
@@ -87,7 +99,7 @@ def app():
     aoi = ee.FeatureCollection(ee.Geometry.Polygon(data))
     datamask = ee.Image('UMD/hansen/global_forest_change_2015').select('datamask').eq(1)
     lon, lat = aoi.geometry().centroid().getInfo()['coordinates']
-    l8 = ee.ImageCollection('LANDSAT/LC08/C01/T1_TOA').filterBounds(aoi) # 32DAY_NDVI
+    l8 = ee.ImageCollection('LANDSAT/LC08/C01/T1_TOA').filterBounds(aoi)
     l8_ndvi_cloudless = l8.map(cloudlessNDVI)
     
     with st.container():		
@@ -112,7 +124,7 @@ def app():
         enddate_format = enddate.strftime('%B %d, %Y')
 
         with st.spinner(text="Fetching data from GEE server..."):
-            df, report_df, start_img, end_img, diff_img, diff_bin_norm, hist_df = read_data(l8_ndvi_cloudless, startdate, enddate, aoi, datamask)
+            df, report_df, start_img, end_img, diff_img, diff_bin_norm, hist_df = read_data(l8_ndvi_cloudless, startdate, enddate, aoi, datamask, 20)
             df['Timestamp'] = pd.to_datetime(df.Timestamp)
             df_annual = transform(df)
 
@@ -284,7 +296,7 @@ def app():
     with metric4:
         st.metric(f'Cloud Cover', f'{(hist_df.iloc[:,1] == 0).mean():0.2%}', 
                 f'{enddate_format}', delta_color='off')
-        st.metric(f'Landsat Images', f'{df.shape[0]}', f'~{0.919*df.shape[0]:0.2f} GB', delta_color='off')
+        st.metric(f'Landsat 8 Images', f'{df.shape[0]}', f'~{0.919*df.shape[0]:0.2f} GB', delta_color='off')
 
     folium_static(my_map)
 
