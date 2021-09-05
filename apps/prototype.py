@@ -118,9 +118,9 @@ def app():
             help="Use the slider to select the DOI's (start and end date)")
         
         with control2:
-            scale = st.number_input(label='Scale', min_value=50, 
-                                    max_value=500, value=100, 
-                                    step=50, help='Use to rescale images. Default is 100m.')
+            scale = st.number_input(label='Scale', min_value=30, 
+                                    max_value=500, value=50, 
+                                    step=10, help='Use to rescale images. Default is 100m.')
 
         startdate_format = startdate.strftime('%B %d, %Y')
         enddate_format = enddate.strftime('%B %d, %Y')
