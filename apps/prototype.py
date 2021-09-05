@@ -20,7 +20,6 @@ import altair as alt
 
 import streamlit.components.v1 as components
 from streamlit_folium import folium_static
-# import extra_streamlit_components as stx
 
 from statsmodels.nonparametric.smoothers_lowess import lowess
 
@@ -33,11 +32,6 @@ def app():
     Map = geemap.Map()
     st.image(r'./assets/header.jpg', use_column_width=True)
     st.title('Vegetation Assessment and Monitoring App')
-    # tab_id = stx.tab_bar(data=[
-    #     stx.TabBarItemData(id=1, title="Data Collection", description=""),
-    #     stx.TabBarItemData(id=2, title="Dashboard", description=""),
-    #     stx.TabBarItemData(id=3, title="Data Analytics", description=""),
-    # ], default=2)
     
     st.subheader('A. Data Collection')
     with st.expander('', expanded=True):
@@ -115,16 +109,23 @@ def app():
         with st.spinner(text="Fetching data from GEE server..."):
             date_list = date_range(l8_ndvi_cloudless, aoi)
 
-        startdate, enddate = st.select_slider('Date Slider', 
+        control1, _, control2 = st.columns((3.5,0.2,1))
+
+        with control1:
+            startdate, enddate = st.select_slider('Date Slider', 
             date_list.Timestamp.unique().tolist(), 
             value=[date_list.Timestamp.unique().tolist()[0], date_list.Timestamp.unique().tolist()[-1]],
             help="Use the slider to select the DOI's (start and end date)")
+        
+        with control2:
+            scale = st.number_input('Scale', 100, 2000, 100, 100)
 
         startdate_format = startdate.strftime('%B %d, %Y')
         enddate_format = enddate.strftime('%B %d, %Y')
 
         with st.spinner(text="Fetching data from GEE server..."):
-            df, report_df, start_img, end_img, diff_img, diff_bin_norm, hist_df = read_data(l8_ndvi_cloudless, startdate, enddate, aoi, datamask, 20)
+            df, report_df, start_img, end_img, diff_img, diff_bin_norm, hist_df = read_data(l8_ndvi_cloudless, startdate, enddate, aoi, datamask, scale)
+            
             df['Timestamp'] = pd.to_datetime(df.Timestamp)
             df_annual = transform(df)
 

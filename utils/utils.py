@@ -52,6 +52,7 @@ basemaps = {
         control = True
     )}
 
+# Define a method for displaying Earth Engine image tiles on a folium map.
 def add_ee_layer(self, ee_object, vis_params, name):
     
     try:    
@@ -65,6 +66,36 @@ def add_ee_layer(self, ee_object, vis_params, name):
             overlay = True,
             control = True
             ).add_to(self)
+        # display ee.ImageCollection()
+        elif isinstance(ee_object, ee.imagecollection.ImageCollection):    
+            ee_object_new = ee_object.mosaic()
+            map_id_dict = ee.Image(ee_object_new).getMapId(vis_params)
+            folium.raster_layers.TileLayer(
+            tiles = map_id_dict['tile_fetcher'].url_format,
+            attr = 'Google Earth Engine',
+            name = name,
+            overlay = True,
+            control = True
+            ).add_to(self)
+        # display ee.Geometry()
+        elif isinstance(ee_object, ee.geometry.Geometry):    
+            folium.GeoJson(
+            data = ee_object.getInfo(),
+            name = name,
+            overlay = True,
+            control = True
+        ).add_to(self)
+        # display ee.FeatureCollection()
+        elif isinstance(ee_object, ee.featurecollection.FeatureCollection):  
+            ee_object_new = ee.Image().paint(ee_object, 0, 2)
+            map_id_dict = ee.Image(ee_object_new).getMapId(vis_params)
+            folium.raster_layers.TileLayer(
+            tiles = map_id_dict['tile_fetcher'].url_format,
+            attr = 'Google Earth Engine',
+            name = name,
+            overlay = True,
+            control = True
+        ).add_to(self)
     
     except:
         print("Could not display {}".format(name))
@@ -73,31 +104,31 @@ def add_ee_layer(self, ee_object, vis_params, name):
 folium.Map.add_ee_layer = add_ee_layer
 
 @st.cache()
-def cloudlessNDVI(image, cloud_score=20):
+def cloudlessNDVI(image):
     cloud = ee.Algorithms.Landsat.simpleCloudScore(image).select('cloud')
-    mask = cloud.lte(cloud_score)
+    mask = cloud.lte(20)
     ndvi = image.normalizedDifference(['B5', 'B4']).rename('NDVI')
     return image.addBands(ndvi).updateMask(mask)
 
-def cloud_mask(image, cloud_score=20):
+def cloud_mask(image):
     cloud = ee.Algorithms.Landsat.simpleCloudScore(image).select('cloud')
-    mask = cloud.lte(cloud_score)
+    mask = cloud.lte(20)
     return mask
 			
 @st.cache(allow_output_mutation=True, suppress_st_warning=True, show_spinner=False)
-def read_data(l8, startdate, enddate, aoi, datamask, cloud_score):
+def read_data(l8, startdate, enddate, aoi, datamask, scale):
 	start1 = startdate.strftime('%Y-%m-%d')
 	start2 = (startdate+timedelta(1)).strftime('%Y-%m-%d')
 	end1 = enddate.strftime('%Y-%m-%d')
 	end2 = (enddate+timedelta(1)).strftime('%Y-%m-%d')
 
 	area = aoi.geometry().area().getInfo()/10000
-	scale = 1000
+	scale = scale
 	start_img = l8.select('NDVI').filterDate(start1, start2).first().unmask()
 	end_img = l8.select('NDVI').filterDate(end1, end2).first().unmask()
 	
-	# start_img = start_img.reproject(crs=ee.Projection('EPSG:3395'), scale=scale)
-	# end_img = end_img.reproject(crs=ee.Projection('EPSG:3395'), scale=scale)
+	start_img = start_img.reproject(crs=ee.Projection('EPSG:3395'), scale=scale)
+	end_img = end_img.reproject(crs=ee.Projection('EPSG:3395'), scale=scale)
 	
 	diff_img = end_img.subtract(start_img)
 
@@ -110,7 +141,7 @@ def read_data(l8, startdate, enddate, aoi, datamask, cloud_score):
 
 	start_arr = geemap.ee_to_numpy(start_img, region=region)
 	end_arr = geemap.ee_to_numpy(end_img, region=region)
-	
+
 	try:	
 		start_bin = np.histogram(start_arr, bins=bins)[0]
 	except:
@@ -178,11 +209,11 @@ def read_data(l8, startdate, enddate, aoi, datamask, cloud_score):
 	df['Standard'] = (df.NDVI - df.NDVI.mean())/df.NDVI.std()
 	df.reset_index(drop=True, inplace=True)
 
-	start_img = cloudlessNDVI(l8.filterDate(start1, start2).first(), cloud_score).select('NDVI')
-	end_img = cloudlessNDVI(l8.filterDate(end1, end2).first(), cloud_score).select('NDVI')
+	start_img = cloudlessNDVI(l8.filterDate(start1, start2).first()).select('NDVI')
+	end_img = cloudlessNDVI(l8.filterDate(end1, end2).first()).select('NDVI')
 
-	start_mask = cloud_mask(l8.filterDate(start1, start2).first(), cloud_score)
-	end_mask = cloud_mask(l8.filterDate(end1, end2).first(), cloud_score)
+	start_mask = cloud_mask(l8.filterDate(start1, start2).first())
+	end_mask = cloud_mask(l8.filterDate(end1, end2).first())
 
 	diff_img = diff_img.updateMask(start_mask)
 	diff_img = diff_img.updateMask(end_mask)
@@ -192,7 +223,6 @@ def read_data(l8, startdate, enddate, aoi, datamask, cloud_score):
 @st.cache(show_spinner=False)
 def date_range(l8, aoi):
 	l8 = l8.select('NDVI')
-	scale=10000
 
 	out_dir = os.path.join(os.getcwd(), 'assets')
 	if not os.path.exists(out_dir):
@@ -200,7 +230,7 @@ def date_range(l8, aoi):
 
 	out_stats = os.path.join(out_dir, 'date_range.csv')
 
-	geemap.zonal_statistics(l8, aoi, out_stats, statistics_type='MEAN', scale=scale)
+	geemap.zonal_statistics(l8, aoi, out_stats, statistics_type='MEAN', scale=10000)
 
 	df = pd.read_csv(out_stats)
 	df = pd.melt(df, id_vars=['system:index'])

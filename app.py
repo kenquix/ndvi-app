@@ -1,6 +1,6 @@
 import streamlit as st
 from multiapp import MultiApp
-from apps import home, approach, prototype, board, team # import your app modules here
+from apps import home, approach, prototype, board, team, cs # import your app modules here
 
 st.set_page_config(page_title='Vega Map', page_icon=r'./assets/logo.png')
 
@@ -45,6 +45,7 @@ app = MultiApp()
 app.add_app("The Challenge", home.app)
 app.add_app("The Approach", approach.app)
 app.add_app("The Prototype", prototype.app)
+# app.add_app('Butuan Case Study', cs.app)
 app.add_app("Discussion Board", board.app)
 app.add_app("The Team", team.app)
 
