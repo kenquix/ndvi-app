@@ -145,7 +145,7 @@ def read_data(l8, startdate, enddate, aoi, datamask, scale):
 	try:	
 		start_bin = np.histogram(start_arr, bins=bins)[0]
 	except:
-		st.error('Too many pixels in sample; must be <= 262144. Please select a smaller region.')
+		st.error('Too many pixels in sample; must be <= 262144. Please select a smaller region or decrease resolution (i.e. Increase the value of scale.).')
 		return 
 
 	start_bin_norm = start_bin/sum(start_bin)
