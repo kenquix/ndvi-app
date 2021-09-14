@@ -1,6 +1,8 @@
 import streamlit as st
 from multiapp import MultiApp
-from apps import home, approach, prototype, board, team, cs # import your app modules here
+from apps import home, approach, prototype, board, team, state, cs # import your app modules here
+
+state.count_sessions()
 
 st.set_page_config(page_title='Vega Map', page_icon=r'./assets/logo.png')
 
