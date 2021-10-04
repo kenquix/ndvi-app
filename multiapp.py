@@ -21,11 +21,10 @@ class MultiApp:
         })
 
     def run(self):
-        titles = [a["title"] for a in self.apps]
-        functions = [a["function"] for a in self.apps]
         st.sidebar.markdown('Navigation')
-        title = st.sidebar.radio(
+        app = st.sidebar.radio(
             '',
-            titles)
+            self.apps,
+            format_func=lambda app: app['title'])
 
-        functions[titles.index(title)]()
+        app['function']()
