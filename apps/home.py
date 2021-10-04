@@ -1,10 +1,15 @@
 import streamlit as st
 
+
 def app():
-    st.markdown(f"""<h1><a href="https://sparta.dap.edu.ph/opendata/lgu/butuancity/challenges/butuancity-forest-ecosystem">Sparta Hackathon Challenge</a></h1>""", unsafe_allow_html=True)
-    st.markdown('---')
-    st.image(r'./assets/header.jpg', use_column_width=True)
-    st.markdown(f"""
+    st.markdown(
+        f"""<h1><a href="https://sparta.dap.edu.ph/opendata/lgu/butuancity/challenges/butuancity-forest-ecosystem">Sparta Hackathon Challenge</a></h1>""",
+        unsafe_allow_html=True,
+    )
+    st.markdown("---")
+    st.image(r"./assets/header.jpg", use_column_width=True)
+    st.markdown(
+        f"""
     <h4>Sector : Forest Ecosystem</h4>
 
     <h4>Theme : Protecting and controlling forest ecosystem using data and technology</h4><br>
@@ -20,6 +25,8 @@ def app():
         
     <p align="justify"><em>*This challenge supports the following <a href="https://www.ph.undp.org/content/philippines/en/home/sustainable-development-goals2.html">UN SDGs</a> 
     and <a href="https://www.un.org/securitycouncil/content/repertoire/thematic-items">Thematic issues.</a></p></em></p>
-    """, unsafe_allow_html=True)
-    
-    st.image(r'./assets/SDGs.png')
+    """,
+        unsafe_allow_html=True,
+    )
+
+    st.image(r"./assets/SDGs.png")

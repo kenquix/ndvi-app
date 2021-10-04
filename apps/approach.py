@@ -1,10 +1,12 @@
 import streamlit as st
 from datetime import datetime
 
+
 def app():
-    st.title('How the challenge was addressed')
-    st.markdown('---')
-    st.markdown(f"""
+    st.title("How the challenge was addressed")
+    st.markdown("---")
+    st.markdown(
+        f"""
         <p align="justify">To address the challenge, the team developed a web app that aims to provide information that can 
         complement the efforts of our decision-makers in monitoring the overall vegetation health of an area, especially our 
         forest ecosystems. The app uses freely available remotely sensed derived information from satellite images from 2013 - present.</p>
@@ -17,18 +19,24 @@ def app():
 
         <p style="margin-left: 30px" align="justify">NDVI, which ranges in value from -1.0 to 1.0, is computed using the equation below, where NDVI
         is equal to the ratio of the difference and sum of the Near-Infrared (NIR) (reflectance at 0.86 <em>u</em>m) and Red bands (reflectance at 0.65 <em>u</em>m).</p>
-        """, unsafe_allow_html=True)
+        """,
+        unsafe_allow_html=True,
+    )
 
     st.latex(r"NDVI = \frac{(NIR - Red)} {(NIR + Red)}")
 
-    st.markdown(f"""
+    st.markdown(
+        f"""
     <p style="margin-left: 30px" align="justify">The figure below provides a visual interpretation of NDVI values for healthy and unhealthy vegetations.</p>
-    """, unsafe_allow_html=True)
+    """,
+        unsafe_allow_html=True,
+    )
 
-    _, center_img, _ = st.columns((1,4,1))
-    center_img.image(r'./assets/ndvi.png')
+    _, center_img, _ = st.columns((1, 4, 1))
+    center_img.image(r"./assets/ndvi.png")
     now = datetime.now().strftime("%d %B %Y")
-    st.markdown(f"""	
+    st.markdown(
+        f"""	
         <p style="margin-left: 30px" align="justify">The NDVI values were classified into six (6) distinct classes:
         <ul style="margin-left: 30px">
         <li style="list-style-type:square">Bare Soil and/or Water: -1 to 0 (exclusive)</li>
@@ -48,10 +56,13 @@ def app():
         <p style="margin-left: 30px" align="justify">The team utilized the capability of <a href="https://earthengine.google.com/">Google Earth Engine (GEE)</a> 
         to provide access to volumes of satellite images without actually downloading data. In essence, the backend of this web app is GEE. The team implemented
         a five (5) step process in creating the web app, listed below.</p>
-    """, unsafe_allow_html=True)
-    _, center_img, _ = st.columns((1,40,1))
-    center_img.image(r'./assets/flowchart.png')
-    st.markdown(f"""
+    """,
+        unsafe_allow_html=True,
+    )
+    _, center_img, _ = st.columns((1, 40, 1))
+    center_img.image(r"./assets/flowchart.png")
+    st.markdown(
+        f"""
         <li style="list-style-type:square" align="justify"><em>Data acquistion</em> - the Landsat 8 NDVI Composites are accessed from the Google Earth Engine repository.</li>
         <li style="list-style-type:square" align="justify"><em>Data filtering</em> - the satellite images are filtered spatially, and temporally based on user input. If no input is provided, 
         the web app will show default area of interest (AOI), set in Butuan City from 2013 - present.</li>
@@ -60,10 +71,13 @@ def app():
         Then, the percent change across the NDVI classes is computed.</li>
         <li style="list-style-type:square" align="justify"><em>Data Visualization</em> - visual expolatory data analysis is performed, providing various time-series visualization of mean NDVI for all available images.</li>
         <li style="list-style-type:square" align="justify"><em>Interactive Web app</em> - a web app is developed to serve as platform for visualization and analysis.</li><br>
-    """, unsafe_allow_html=True)
-    _, webimg = st.columns((1,25))
-    webimg.image(r'./assets/webapp.png')
-    st.markdown(f"""
+    """,
+        unsafe_allow_html=True,
+    )
+    _, webimg = st.columns((1, 25))
+    webimg.image(r"./assets/webapp.png")
+    st.markdown(
+        f"""
         <br>
         <h3>Resources:</h3>
         <ul>
@@ -77,7 +91,9 @@ def app():
         <li><a href="https://boundingbox.klokantech.com/">Bounding Box Tool</a>. (2021). Retrieved {now}</li>
         </ul>
 
-        """, unsafe_allow_html=True)
+        """,
+        unsafe_allow_html=True,
+    )
 
     # st.markdown(f"""
     # 		<h3>License:</h3>

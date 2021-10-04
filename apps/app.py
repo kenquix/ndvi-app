@@ -12,7 +12,7 @@
 # import fiona
 # from PIL import Image
 # # from PIL import ImageFont
-# from PIL import ImageDraw 
+# from PIL import ImageDraw
 # import streamlit as st
 
 # import pandas as pd
@@ -48,7 +48,7 @@
 # 			</style>
 # 			"""
 
-# st.markdown(hide_streamlit_style, unsafe_allow_html=True) 
+# st.markdown(hide_streamlit_style, unsafe_allow_html=True)
 
 # # Add custom basemaps to folium
 # basemaps = {
@@ -90,10 +90,10 @@
 
 # # Define a method for displaying Earth Engine image tiles on a folium map.
 # def add_ee_layer(self, ee_object, vis_params, name):
-    
-#     try:    
+
+#     try:
 #         # display ee.Image()
-#         if isinstance(ee_object, ee.image.Image):    
+#         if isinstance(ee_object, ee.image.Image):
 #             map_id_dict = ee.Image(ee_object).getMapId(vis_params)
 #             folium.raster_layers.TileLayer(
 #             tiles = map_id_dict['tile_fetcher'].url_format,
@@ -103,7 +103,7 @@
 #             control = True
 #             ).add_to(self)
 #         # display ee.ImageCollection()
-#         # elif isinstance(ee_object, ee.imagecollection.ImageCollection):    
+#         # elif isinstance(ee_object, ee.imagecollection.ImageCollection):
 #         #     ee_object_new = ee_object.mosaic()
 #         #     map_id_dict = ee.Image(ee_object_new).getMapId(vis_params)
 #         #     folium.raster_layers.TileLayer(
@@ -114,7 +114,7 @@
 #         #     control = True
 #         #     ).add_to(self)
 #         # # display ee.Geometry()
-#         # elif isinstance(ee_object, ee.geometry.Geometry):    
+#         # elif isinstance(ee_object, ee.geometry.Geometry):
 #         #     folium.GeoJson(
 #         #     data = ee_object.getInfo(),
 #         #     name = name,
@@ -122,7 +122,7 @@
 #         #     control = True
 #         # ).add_to(self)
 #         # # display ee.FeatureCollection()
-#         # elif isinstance(ee_object, ee.featurecollection.FeatureCollection):  
+#         # elif isinstance(ee_object, ee.featurecollection.FeatureCollection):
 #         #     ee_object_new = ee.Image().paint(ee_object, 0, 2)
 #         #     map_id_dict = ee.Image(ee_object_new).getMapId(vis_params)
 #         #     folium.raster_layers.TileLayer(
@@ -132,10 +132,10 @@
 #         #     overlay = True,
 #         #     control = True
 #         # ).add_to(self)
-    
+
 #     except:
 #         print("Could not display {}".format(name))
-    
+
 # # Add EE drawing method to folium.
 # folium.Map.add_ee_layer = add_ee_layer
 
@@ -150,27 +150,27 @@
 # 	scale = 100
 # 	start_img = l8.select('NDVI').filterDate(start1, start2).first().unmask()
 # 	end_img = l8.select('NDVI').filterDate(end1, end2).first().unmask()
-	
+
 # 	start_img = start_img.reproject(crs=ee.Projection('EPSG:3395'), scale=scale)
 # 	end_img = end_img.reproject(crs=ee.Projection('EPSG:3395'), scale=scale)
 
 # 	diff_img = end_img.subtract(start_img)
 
-# 	classes = ['Soil/Water', 'Very Low', 'Low', 
+# 	classes = ['Soil/Water', 'Very Low', 'Low',
 # 			'Mod. Low', 'Mod. High', 'High']
 
 # 	bins = [-1, 0 ,0.2 ,0.4 ,0.6 ,0.8 ,1.0]
-	
+
 # 	region = aoi.geometry()
 
 # 	start_arr = geemap.ee_to_numpy(start_img, region=region)
 # 	end_arr = geemap.ee_to_numpy(end_img, region=region)
-	
-# 	try:	
+
+# 	try:
 # 		start_bin = np.histogram(start_arr, bins=bins)[0]
 # 	except:
 # 		st.error('Too many pixels in sample; must be <= 262144. Please select a smaller region.')
-# 		return 
+# 		return
 
 # 	start_bin_norm = start_bin/sum(start_bin)
 
@@ -196,7 +196,7 @@
 
 # 	interpretation = ['Increase' if i > 0 else 'Decrease' if  i < 0 else 'No change' if  i == 0 else 'Increase' for i in list(perc_change)]
 
-# 	tabular_df = pd.DataFrame({f'Area ({startdate})': start_bin_norm*area, 
+# 	tabular_df = pd.DataFrame({f'Area ({startdate})': start_bin_norm*area,
 # 			f'Area ({enddate})': end_bin_norm*area,
 # 			'%Change': perc_change*100, 'Interpretation': interpretation}, index=classes)
 
@@ -325,8 +325,8 @@
 # 		st.subheader('A. Data Collection')
 # 		with st.expander('', expanded=True):
 # 			st.markdown(f"""
-# 				<p align="justify">Select an Area of Interest (AOI) by either <strong>(a) uploading a local file</strong> (*.KML format) or <strong>(b) drawing a bounding box</strong>.</p> 
-# 				""", unsafe_allow_html=True)	
+# 				<p align="justify">Select an Area of Interest (AOI) by either <strong>(a) uploading a local file</strong> (*.KML format) or <strong>(b) drawing a bounding box</strong>.</p>
+# 				""", unsafe_allow_html=True)
 # 			inputFile = st.file_uploader('a. Upload a file', type=['kml'],
 # 									help='Currently, only KML format AOI is accepted. ')
 # 			st.markdown('<p style="font-size:13px">b. Draw a bounding box</p>', unsafe_allow_html=True)
@@ -340,7 +340,7 @@
 # 				""", unsafe_allow_html=True)
 # 			components.iframe('https://boundingbox.klokantech.com/', height=500)
 
-# 			inputRegion = st.text_input(f'Paste AOI coordinates here and press Enter:', 
+# 			inputRegion = st.text_input(f'Paste AOI coordinates here and press Enter:',
 # 									help='Currently, only GeoJSON formatted AOI is accepted')
 
 # 			Map = geemap.Map()
@@ -356,8 +356,8 @@
 # 				if inputFile is None and len(inputRegion)==0:
 # 					data = json.loads(default_region)
 
-# 				elif inputFile is not None and len(inputRegion) == 0:	
-# 					gpd.io.file.fiona.drvsupport.supported_drivers['KML'] = 'rw'	
+# 				elif inputFile is not None and len(inputRegion) == 0:
+# 					gpd.io.file.fiona.drvsupport.supported_drivers['KML'] = 'rw'
 # 					input_df = gpd.read_file(inputFile, driver='KML')
 # 					s = str(input_df.geometry.iloc[0])
 # 					g1 = shapely.wkt.loads(s)
@@ -387,13 +387,13 @@
 # 			aoi = ee.FeatureCollection(ee.Geometry.Polygon(data))
 # 			datamask = ee.Image('UMD/hansen/global_forest_change_2015').select('datamask').eq(1)
 # 			lon, lat = aoi.geometry().centroid().getInfo()['coordinates']
-			
+
 # 			st.markdown(f"""
-# 				Area of AOI is **{aoi.geometry().area().getInfo()/10000:,.02f} has**. The centroid is 
+# 				Area of AOI is **{aoi.geometry().area().getInfo()/10000:,.02f} has**. The centroid is
 # 				located at **({lat:.02f} N, {lon:.02f} E)**.
 # 				""")
-		
-# 		with st.container():		
+
+# 		with st.container():
 # 			# st.markdown('---')
 # 			st.subheader('B. Map Visualization')
 # 			with st.expander('', expanded=True):
@@ -407,8 +407,8 @@
 # 			with st.spinner(text="Fetching data from GEE server..."):
 # 				date_list = date_range(l8, aoi)
 
-# 			startdate, enddate = st.select_slider('DOI Slider', 
-# 				date_list.Timestamp.unique().tolist(), 
+# 			startdate, enddate = st.select_slider('DOI Slider',
+# 				date_list.Timestamp.unique().tolist(),
 # 				value=[date_list.Timestamp.unique().tolist()[0], date_list.Timestamp.unique().tolist()[-1]],
 # 				help="Use the slider to select the DOI's (start and end date)")
 
@@ -420,7 +420,7 @@
 # 				df, report_df, start_img, end_img, diff_img, diff_bin_norm, hist_df = read_data(l8, startdate, enddate, aoi, datamask)
 # 				df['Timestamp'] = pd.to_datetime(df.Timestamp)
 # 				df_annual = transform(df)
-							
+
 # 			visParams = {
 # 				# 'bands': ['NDVI'],
 # 				'min': 0,
@@ -453,7 +453,7 @@
 # 			my_map.add_ee_layer(diff_img.clip(aoi.geometry()), visParams_diff, 'Difference Image')
 # 			my_map.add_ee_layer(start_img.clip(aoi.geometry()), visParams, f'{startdate.strftime("%d %B %Y")} Image')
 # 			my_map.add_ee_layer(end_img.clip(aoi.geometry()), visParams, f'{enddate.strftime("%d %B %Y")} Image')
-			
+
 # 			# # Add a layer control panel to the map.
 # 			my_map.add_child(folium.LayerControl())
 # 			my_map.add_child(folium.LatLngPopup())
@@ -476,7 +476,7 @@
 # 			with st.spinner(text="Fetching data from GEE server... Generating timelapse animation..."):
 # 				with st.expander('Timelapse of Annual NDVI Composite Images'):
 # 					timelapse = st.checkbox('Check to generate the animation.')
-					
+
 # 					if timelapse:
 # 						out_dir = os.path.join(os.path.expanduser('~'), 'assets')
 
@@ -489,11 +489,11 @@
 # 						def add_doy(img):
 # 							doy = ee.Date(img.get('system:time_start')).getRelative('day', 'year')
 # 							return img.set('doy', doy)
-						
+
 # 						def add_year(img):
 # 							year = ee.Date(img.get('system:time_start')).get('year')
 # 							return img.set('year', year)
-						
+
 # 						l8 = l8.map(add_doy)
 # 						l8 = l8.map(add_year)
 
@@ -513,7 +513,7 @@
 
 # 						for filename in filenames:
 # 							images.append(imageio.imread(filename))
-						
+
 # 						imageio.mimsave(os.path.join(zip_dir, 'landsat_ndvi_ts.gif'), images, fps=1)
 # 						# s1 = startdate.strftime('%Y-%m-%d')
 # 						# d1 = enddate.strftime('%Y-%m-%d')
@@ -564,11 +564,11 @@
 # 						contents = file_.read()
 # 						data_url = base64.b64encode(contents).decode("utf-8")
 # 						file_.close()
-						
+
 # 						st.markdown(f"""<center><img src="data:image/gif;base64,{data_url}" alt="timelapse gif"></center>""",
 # 							unsafe_allow_html=True)
 
-# 					st.markdown('<br>', unsafe_allow_html=True)			
+# 					st.markdown('<br>', unsafe_allow_html=True)
 
 # 		st.markdown('---')
 # 		st.subheader('C. Data Analytics')
@@ -577,8 +577,8 @@
 
 # 		baseC = alt.Chart(df).encode(
 # 			x=alt.X('Timestamp:T', title=None),
-# 			y=alt.Y('NDVI_Lowess:Q', title='NDVI', 
-# 					scale=alt.Scale(domain=[df.NDVI_Lowess.min(), 
+# 			y=alt.Y('NDVI_Lowess:Q', title='NDVI',
+# 					scale=alt.Scale(domain=[df.NDVI_Lowess.min(),
 # 									df.NDVI_Lowess.max()]))
 # 			)
 
@@ -606,7 +606,7 @@
 # 		upper = df.groupby('DOY')['NDVI'].quantile(.75).max()
 
 # 		lineB = baseB.mark_line().encode(
-# 			y=alt.Y('median(NDVI):Q', 
+# 			y=alt.Y('median(NDVI):Q',
 # 				scale=alt.Scale(domain=[lower,upper])
 # 				)
 # 			)
@@ -614,12 +614,12 @@
 # 				y='NDVI:Q')
 
 # 		altB = (lineB + bandB).interactive()
-	
+
 # 		start_lower = hist_df[f'{startdate}'].quantile(.25).min()
 # 		start_upper = hist_df[f'{startdate}'].quantile(.75).max()
 # 		end_lower = hist_df[f'{enddate}'].quantile(.25).min()
 # 		end_upper = hist_df[f'{enddate}'].quantile(.75).max()
-		
+
 # 		altC = alt.Chart(hist_df).transform_fold([f'{startdate}', f'{enddate}'], as_=['Dates', 'NDVI']
 # 			).mark_area( opacity=0.3, interpolate='step').encode(
 # 				x=alt.X('NDVI:Q', bin=alt.Bin(maxbins=200)),
@@ -629,7 +629,7 @@
 # 						alt.Tooltip('NDVI:Q', bin=alt.Bin(maxbins=100)),
 # 						alt.Tooltip('count()', title='Count')]
 # 			).interactive()
-		
+
 # 		x = np.array(pd.to_datetime(df.Timestamp), dtype=float)
 # 		y = df.NDVI_Lowess
 # 		results = np.polyfit(x,y, deg=1)
@@ -645,9 +645,9 @@
 # 		st.write(' ')
 # 		st.info(f"""Overall, mean NDVI for the *selected AOI* and *dates* is **{mean_ndvi:0.3f}** and is **trending {trending}!** 📈 and \
 # 					the areas where a **positive NDVI change** is observed is at **{positive_change:0.2%}**!
-# 					\nSelected dates: **{startdate_format} - {enddate_format}**   
-# 					Number of days between selected dates: **{(enddate - startdate).days:,} days**    
-# 					Number of images available between the selected dates: **{df.shape[0]}**   
+# 					\nSelected dates: **{startdate_format} - {enddate_format}**
+# 					Number of days between selected dates: **{(enddate - startdate).days:,} days**
+# 					Number of images available between the selected dates: **{df.shape[0]}**
 # 					""")
 
 # 		decrease_list = list(report_df[report_df.Interpretation.isin(['Decrease'])].index)
@@ -659,9 +659,9 @@
 # 		st.markdown(f"""
 # 			<p align="justify">A decrease in the first four (4) NDVI classes (i.e., -1 - 0.6) or an increase in the remaining NDVI classes
 # 			(i.e., 0.6 above) is interpreted as positive and vice versa. </p>
-			
-# 			<p align="justify">Given this and inspecting the table above, we observed <font color="#2D8532"><strong>increase</strong></font> in the following NDVI landcover classes: 
-# 			<font color="#2D8532"><strong>{', '.join(increase_list)}</strong></font> while we observed a <font color="#A42F25"><strong>decrease</strong></font> in the following classes: 
+
+# 			<p align="justify">Given this and inspecting the table above, we observed <font color="#2D8532"><strong>increase</strong></font> in the following NDVI landcover classes:
+# 			<font color="#2D8532"><strong>{', '.join(increase_list)}</strong></font> while we observed a <font color="#A42F25"><strong>decrease</strong></font> in the following classes:
 # 			<font color="#A42F25"><strong>{', '.join(decrease_list)}</strong></font>.</p>
 # 			""", unsafe_allow_html=True)
 # 		st.markdown('---')
@@ -671,7 +671,7 @@
 
 # 		st.markdown(f"""
 # 			<p align="justify">Figure 1 shows the distribution of NDVI values for each pixel (100-meter resolution). The
-# 			<strong><font color="#9198A2">blue bars</font></strong> correspond to the earliest available image between the selected dates (i.e., <strong>{startdate}</strong>), 
+# 			<strong><font color="#9198A2">blue bars</font></strong> correspond to the earliest available image between the selected dates (i.e., <strong>{startdate}</strong>),
 # 			while the <strong><font color="#BAA083">orange bars</font></strong> correspond to the most recent available image (i.e., <strong>{enddate}</strong>).</p>
 # 			<p align="justify">For the image on {startdate}, the figure shows that 50% of the data lies between <strong>{start_lower:.2f} - {start_upper:.2f}</strong>
 # 			(inclusive), while for the image on {enddate}, 50% of the data lies between <strong>{end_lower:.2f} - {end_upper:.2f}</strong>
@@ -679,16 +679,16 @@
 # 			""", unsafe_allow_html=True)
 
 # 		option1, option2 = st.columns((2))
-# 		rule_option = option1.selectbox(label='Select Line Aggregation', 
-# 										options=['Mean', 'Median', 'Maximum', 'Minimum'], 
+# 		rule_option = option1.selectbox(label='Select Line Aggregation',
+# 										options=['Mean', 'Median', 'Maximum', 'Minimum'],
 # 										help='Defines the location of the horizontal red line along the y-axis')
-# 		band_option = option2.selectbox(label='Select Error Bar Extent', 
-# 							options=['Inter-quartile Range', 'Confidence Interval', 
+# 		band_option = option2.selectbox(label='Select Error Bar Extent',
+# 							options=['Inter-quartile Range', 'Confidence Interval',
 # 							'Standard Error', 'Standard Deviation'],
 # 							help='Defines the extent of the colored region')
 # 		standardized = st.checkbox('Click to standardize')
 # 		rule_option_dict = {'Mean': 'mean', 'Median': 'median', 'Maximum': 'max', 'Minimum': 'min'}
-# 		band_option_dict = {'Inter-quartile Range': 'iqr', 'Confidence Interval': 'ci', 
+# 		band_option_dict = {'Inter-quartile Range': 'iqr', 'Confidence Interval': 'ci',
 # 			'Standard Error': 'stderr', 'Standard Deviation': 'stdev'}
 
 # 		annual = alt.Chart(df_annual).mark_circle(size=50).encode(
@@ -700,7 +700,7 @@
 # 				alt.Tooltip('NDVI:Q', title='Annual Mean', format=',.4f')
 # 			])
 
-# 		if standardized:	
+# 		if standardized:
 # 			baseA = alt.Chart(df).encode(
 # 				x=alt.X('Timestamp:T', title=None),
 # 				y=alt.Y('Standard:Q')
@@ -709,10 +709,10 @@
 # 			linesA = baseA.mark_bar().encode(
 # 				color=alt.Color('Standard:Q', scale=alt.Scale(scheme='redblue'), legend=None)
 # 				)
-			
+
 # 			rule = alt.Chart(df).mark_rule(color='red').encode(
 # 				y=alt.Y('mean(Standard):Q'),
-# 				tooltip=[alt.Tooltip(f'mean(Standard):Q', 
+# 				tooltip=[alt.Tooltip(f'mean(Standard):Q',
 # 				title=f'{rule_option} NDVI Line', format=',.4f')])
 
 # 			altA = (linesA + rule).interactive(bind_y=False)
@@ -736,7 +736,7 @@
 
 # 			rule = alt.Chart(df).mark_rule(color='red').encode(
 # 				y=alt.Y(f'{rule_option_dict[rule_option]}(NDVI):Q'),
-# 				tooltip=[alt.Tooltip(f'{rule_option_dict[rule_option]}(NDVI):Q', 
+# 				tooltip=[alt.Tooltip(f'{rule_option_dict[rule_option]}(NDVI):Q',
 # 				title=f'{rule_option} NDVI Line', format=',.4f')])
 
 # 			bandA = alt.Chart(df).mark_errorband(extent=f'{band_option_dict[band_option]}').encode(
@@ -747,9 +747,9 @@
 # 		st.altair_chart(altA, use_container_width=True)
 # 		st.markdown('<center>Figure 2. Mean NDVI Time-series over the AOI for imagery at every available date</center><br>', unsafe_allow_html=True)
 # 		st.markdown(f"""
-# 			<p align="justify">Figure 2 shows a time-series that plots the average NDVI values over the AOI at each available image 
-# 			between the selected dates. We can observe that the maximum mean NDVI (i.e., <strong>{df.NDVI.max():.2f})</strong> is observed on 
-# 			<strong>{df.loc[df.NDVI.argmax(),'Timestamp'].strftime('%B %d, %Y')}</strong> while the minimum mean NDVI (i.e., 
+# 			<p align="justify">Figure 2 shows a time-series that plots the average NDVI values over the AOI at each available image
+# 			between the selected dates. We can observe that the maximum mean NDVI (i.e., <strong>{df.NDVI.max():.2f})</strong> is observed on
+# 			<strong>{df.loc[df.NDVI.argmax(),'Timestamp'].strftime('%B %d, %Y')}</strong> while the minimum mean NDVI (i.e.,
 # 			<strong>{df.NDVI.min():.2f}</strong>) is observed on <strong>{df.loc[df.NDVI.argmin(),'Timestamp'].strftime('%B %d, %Y')}</strong>. A difference of
 # 			<strong>{df.NDVI.max()-df.NDVI.min():.2f}</strong>.</p>
 
@@ -757,21 +757,21 @@
 # 			is observed in <strong>{df.loc[df_annual.NDVI.argmax(),'Timestamp'].strftime('%Y')}</strong>, while minimum NDVI (i.e., <strong>{df_annual.NDVI.min():.2f})</strong>
 # 			is observed in <strong>{df.loc[df_annual.NDVI.argmin(),'Timestamp'].strftime('%Y')}</strong>.</p>
 
-# 			<p align="justify">The red line corresponds to the average NDVI over the AOI and DOI.</p>		
+# 			<p align="justify">The red line corresponds to the average NDVI over the AOI and DOI.</p>
 # 			<p align="justify">Upon ticking the checkbox, the plot now shows the standardized values of the NDVI time-series, setting the mean of the series to zero (0) with a
 # 			standard deviation equal to one (1).</p>
 # 			""", unsafe_allow_html=True)
-		
+
 # 		# adf = adfuller(df['NDVI'])
 # 		# 'Since the critical value is less than all of the t-statistics, we can reject the null hypothesis. The series is stationary. We can perform forecasting'
 # 		# if adf[0] <= adf[4]['1%'] and adf[0] <= adf[4]['5%'] and adf[0] <= adf[4]['10%']:
 # 		# 	hypothesis = ['', '']
 # 		# else:
 # 		# 	hypothesis = ['not', 'non-']
-			
+
 # 		# hypothesis = f'Since the critical value is {hypothesis[0]} less than all of the t-statistics, we can{hypothesis[0]} reject the null hypothesis.\
 # 		# 	The series is {hypothesis[1]}stationary. We can{hypothesis[0]} perform forecasting.'
-		
+
 # 		# with st.beta_expander('Check if we can forecast', expanded=True):
 # 		# 	st.markdown(f"""<p align="justify"><strong>Test for stationarity using the Augmented Dickey Fuller Test</strong>
 # 		# 	<ul>
@@ -785,14 +785,14 @@
 # 		st.altair_chart(altAA, use_container_width=True)
 # 		st.markdown('<center>Figure 3. Smoothed Trend of Mean NDVI Time-series</center><br>', unsafe_allow_html=True)
 # 		st.markdown(f"""
-# 			<p align="justify">Figure 3 shows a smoothed version of the time-series plot that lessens the variations between time steps, 
+# 			<p align="justify">Figure 3 shows a smoothed version of the time-series plot that lessens the variations between time steps,
 # 			removes noise and easily visualizes the underlying trend. Given this, we can observe that the red line which corresponds to
 # 			the best-fit line of the series is <strong>trending {trending}</strong>.</p>
 # 			""", unsafe_allow_html=True)
-		
+
 # 		st.altair_chart(altB, use_container_width=True)
 # 		st.markdown('<center>Figure 4. Variation in NDVI values per Day of Year (DOY)</center><br>', unsafe_allow_html=True)
-		
+
 # 		def q75(x):
 # 			return x.quantile(0.75)
 
@@ -804,7 +804,7 @@
 # 		doy_df.reset_index(inplace=True)
 # 		doy_df.columns = ['DOY', 'Q75', 'Q25', 'Median']
 # 		doy_df['variation'] = doy_df.Q75 - doy_df.Q25
-		
+
 # 		max_day = doy_df.loc[doy_df.Median.argmax(),'DOY']
 # 		min_day = doy_df.loc[doy_df.Median.argmin(),'DOY']
 # 		var_max_day = doy_df.loc[doy_df.variation.argmax(),'DOY']
@@ -847,14 +847,14 @@
 # 			var_min_str = 'th'
 
 # 		st.markdown(f"""
-# 			<p align="justify">Figure 4 shows the median of mean NDVI, represented by the <font color="#5378A9">blue line</font> 
+# 			<p align="justify">Figure 4 shows the median of mean NDVI, represented by the <font color="#5378A9">blue line</font>
 # 			and the corresponding variation per day (i.e., Inter-quartile range)
 # 			across a year, represented by the <font color="#BFC9D5">light-blue band</font>.</p>
-			
+
 # 			<p align="justify">The maximum NDVI (i.e., <strong>{doy_df.Median.max():.2f}</strong>) is measured on the <strong>{max_day}{max_str} day</strong>, while the minimum
 # 			NDVI (i.e., <strong>{doy_df.Median.min():.2f}</strong>) is measured on the <strong>{min_day}{min_str} day</strong> of the year.</p>
 
-# 			<p align="justify">The largest variation in NDVI values is observed on the <strong>{var_max_day}{var_max_str} day </strong>of the year, while the 
+# 			<p align="justify">The largest variation in NDVI values is observed on the <strong>{var_max_day}{var_max_str} day </strong>of the year, while the
 # 			smallest variation is observed on the <strong>{var_min_day}{var_min_str} day</strong>.</p>
 # 			""", unsafe_allow_html=True)
 
@@ -869,13 +869,13 @@
 # 			# pdf.add_page()
 # 			# pdf.set_font('Times', '', 12)
 # 			# pdf.cell(0, 10, f'Report Generated on {datetime.now().date()}', 0, 1)
-			
+
 # 			# # save visualizations as png
 # 			# altA.save('chart1.png')
 # 			# altAA.save('chart1a.png')
 # 			# (lineB + bandB).save('chart2.png')
 # 			# altC.save('chart3.png')
-			
+
 # 			# export_map = folium.Map(location=[lat, lon], zoom_start=14)
 # 			# basemaps['Google Satellite Hybrid'].add_to(export_map)
 # 			# # export_map.add_ee_layer(start_img.clip(aoi.geometry()), visParams, f'{startdate}_IMG')
@@ -894,7 +894,7 @@
 # 			# 		pdf.cell(w=w, h=h, txt=header, border=1, ln=0, align='C')
 # 			# 	else:
 # 			# 		pdf.cell(w=w, h=h, txt=header, border=1, ln=1, align='C')
-				
+
 # 			# for row in range(export_df.shape[0]):
 # 			# 	for col in headers:
 # 			# 		if col is not headers[-1] and col is not headers[-2]:
@@ -918,7 +918,7 @@
 # 			# pdf.ln(5)
 # 			# pdf.image('chart3.png', w=190, h=80)
 # 			# pdf.ln(5)
-			
+
 # 			# html = create_download_link(pdf.output(dest="S").encode("latin-1"), f"Green Report")
 
 # 			# st.sidebar.markdown(html, unsafe_allow_html=True)
@@ -932,35 +932,35 @@
 
 # 		<h4>Theme : Protecting and controlling forest ecosystem using data and technology</h4><br>
 
-# 		<p align="justify">Butuan City, also known as the Timber City of the South, enriches its potentials towards 
-# 		investing in the richness of its Forestland Ecosystem. As hampered by some illegal activities and exploitations, 
-# 		the City of Butuan recognizes the relevance of data in the development of technological innovations which can 
-# 		provide mechanisms in protecting forestland areas that can support the economic growth and resiliency of the city. 
-# 		To bring its people to one venue for positive engagement and collaborative efforts, the City of Butuan invites 
-# 		ideas, project proposals, and technological innovations to address threatening factors in protecting and conserving 
-# 		the Forestland ecosystem through hackathons. Datasets and other entries collected in this challenge will be used in 
+# 		<p align="justify">Butuan City, also known as the Timber City of the South, enriches its potentials towards
+# 		investing in the richness of its Forestland Ecosystem. As hampered by some illegal activities and exploitations,
+# 		the City of Butuan recognizes the relevance of data in the development of technological innovations which can
+# 		provide mechanisms in protecting forestland areas that can support the economic growth and resiliency of the city.
+# 		To bring its people to one venue for positive engagement and collaborative efforts, the City of Butuan invites
+# 		ideas, project proposals, and technological innovations to address threatening factors in protecting and conserving
+# 		the Forestland ecosystem through hackathons. Datasets and other entries collected in this challenge will be used in
 # 		hackathons to create a pitch project for Butuan that will address their problem in the tourism sector.</p>
-		 
-# 		<p align="justify"><em>*This challenge supports the following <a href="https://www.ph.undp.org/content/philippines/en/home/sustainable-development-goals2.html">UN SDGs</a> 
+
+# 		<p align="justify"><em>*This challenge supports the following <a href="https://www.ph.undp.org/content/philippines/en/home/sustainable-development-goals2.html">UN SDGs</a>
 # 		and <a href="https://www.un.org/securitycouncil/content/repertoire/thematic-items">Thematic issues.</a></p></em></p>
 # 		""", unsafe_allow_html=True)
-		
+
 # 		st.image(r'./assets/SDGs.png')
 
 # 	elif navigation == 'The Approach':
 # 		st.title('How the challenge was addressed')
 # 		st.markdown('---')
 # 		st.markdown(f"""
-# 			<p align="justify">To address the challenge, the team developed a web app that aims to provide information that can 
-# 			complement the efforts of our decision-makers in monitoring the overall vegetation health of an area, including our 
+# 			<p align="justify">To address the challenge, the team developed a web app that aims to provide information that can
+# 			complement the efforts of our decision-makers in monitoring the overall vegetation health of an area, including our
 # 			forest ecosystems. The app uses freely available remotely sensed derived information from satellite images from 2013 - present.</p>
 
-# 			<p align="justify"><em><font color="#85221A">Note: The information presented in this app 
-# 			serves as a guide only. Ground validation should still be conducted to verify its accuracy.</font></em></p> 
+# 			<p align="justify"><em><font color="#85221A">Note: The information presented in this app
+# 			serves as a guide only. Ground validation should still be conducted to verify its accuracy.</font></em></p>
 
 # 			<ul>
 # 			<li><strong>Indicator: <a href="https://gisgeography.com/ndvi-normalized-difference-vegetation-index/">Normalized Difference Vegetation Index (NDVI)</a></strong></li>
-# 			<p style="margin-left: 30px" align="justify">NDVI is a widely used indicator to quantify vegetation health based on how the vegetation responds to light at the Near 
+# 			<p style="margin-left: 30px" align="justify">NDVI is a widely used indicator to quantify vegetation health based on how the vegetation responds to light at the Near
 # 			Infrared (NIR) and Red bands.</p>
 # 			</ul>
 
@@ -977,7 +977,7 @@
 # 		_, center_img, _ = st.columns((1,4,1))
 # 		center_img.image(r'./assets/ndvi.png')
 # 		now = datetime.now().strftime("%d %B %Y")
-# 		st.markdown(f"""	
+# 		st.markdown(f"""
 # 			<p style="margin-left: 30px" align="justify">The NDVI values were classified into six (6) distinct classes:
 # 			<ul style="margin-left: 30px">
 # 			<li style="list-style-type:square">Bare Soil and/or Water: -1 to 0 (exclusive)</li>
@@ -988,18 +988,18 @@
 # 			<li style="list-style-type:square">High Vegetation: 0.8 to 1.0 (inclusive)</li></ul></p>
 
 # 			<ul>
-# 			<li><strong>Data: <a href="https://developers.google.com/earth-engine/datasets/catalog/LANDSAT_LC08_C01_T1_8DAY_NDVI">Landsat 8 
+# 			<li><strong>Data: <a href="https://developers.google.com/earth-engine/datasets/catalog/LANDSAT_LC08_C01_T1_8DAY_NDVI">Landsat 8
 # 			Collection 1 Tier 1 8-Day NDVI Composite (30-meter resolution)</a></strong></li>
-# 			<p style="margin-left: 30px" align="justify">The primary data used to get NDVI values are derived from the 8-day NDVI Composite 
-# 			of Landsat 8 images. These composites are created from all the scenes in each 8-day period beginning from the first day of the 
-# 			year and continuing to the 360th day of the year. The final composite of the year, beginning on day 361, overlaps the first 
-# 			composite of the following year by three (3) days. All the images from each 8-day period are included in the composite, with 
+# 			<p style="margin-left: 30px" align="justify">The primary data used to get NDVI values are derived from the 8-day NDVI Composite
+# 			of Landsat 8 images. These composites are created from all the scenes in each 8-day period beginning from the first day of the
+# 			year and continuing to the 360th day of the year. The final composite of the year, beginning on day 361, overlaps the first
+# 			composite of the following year by three (3) days. All the images from each 8-day period are included in the composite, with
 # 			the most recent pixel as the composite value.</p>
 # 			</ul>
 
 # 			<ul >
 # 			<li><strong>Methodology</strong></li>
-# 			<p style="margin-left: 30px" align="justify">The team utilized the capability of <a href="https://earthengine.google.com/">Google Earth Engine (GEE)</a> 
+# 			<p style="margin-left: 30px" align="justify">The team utilized the capability of <a href="https://earthengine.google.com/">Google Earth Engine (GEE)</a>
 # 			to provide access to volumes of satellite images without actually downloading data. In essence, the backend of this web app is GEE. The team implemented
 # 			a five (5) step process in creating the web app, listed below.</p>
 # 		""", unsafe_allow_html=True)
@@ -1007,10 +1007,10 @@
 # 		center_img.image(r'./assets/flowchart.png')
 # 		st.markdown(f"""
 # 			<li style="list-style-type:square" align="justify"><em>Data acquistion</em> - the Landsat 8 NDVI Composites are accessed from the Google Earth Engine repository.</li>
-# 			<li style="list-style-type:square" align="justify"><em>Data filtering</em> - the satellite images are filtered spatially and temporally based on user input. If no input provided, 
+# 			<li style="list-style-type:square" align="justify"><em>Data filtering</em> - the satellite images are filtered spatially and temporally based on user input. If no input provided,
 # 			the web app will show default area of interest (AOI), set in Butuan City from 2013 - present.</li>
 # 			<li style="list-style-type:square" align="justify"><em>Data Wrangling</em> - the raw images are aggregated, spatially and temporally, into mean NDVI, per available date.</li>
-# 			<li style="list-style-type:square" align="justify"><em>Data Analysis</em> - the difference between NDVI values between the earliest and latest available images are obtained. 
+# 			<li style="list-style-type:square" align="justify"><em>Data Analysis</em> - the difference between NDVI values between the earliest and latest available images are obtained.
 # 			Then, the percent change across the NDVI classes is computed.</li>
 # 			<li style="list-style-type:square" align="justify"><em>Data Visualization</em> - visual expolatory data analysis is performed, providing various time-series visualization of mean NDVI for all available images.</li>
 # 			<li style="list-style-type:square" align="justify"><em>Interactive Web app</em> - a web app is developed to serve as platform for visualization and analysis.</li><br>
@@ -1024,9 +1024,9 @@
 # 			<li><a href=https://developers.google.com/earth-engine/datasets/catalog/LANDSAT_LC08_C01_T1_8DAY_NDVI?hl=en#terms-of-use>Landsat 8 Collection 1 Tier 1 8-Day NDVI Composite.</a> (2021). Retrieved {now}</li>
 # 			<li><a href="https://developers.google.com/earth-engine/tutorials/community/time-series-visualization-with-altair">Time Series Visualization with Altair</a> | Google Earth Engine. (2021). Retrieved {now}</li>
 # 			<li><a href="https://boundingbox.klokantech.com/">Bounding Box Tool</a>. (2021). Retrieved {now}</li>
-# 			<li>Aquino, D., Rocha Neto, O., Moreira, M., Teixeira, A., & Andrade, E. (2018). Use of remote sensing to identify areas at risk of degradation in the semi-arid region. 49(3). 
+# 			<li>Aquino, D., Rocha Neto, O., Moreira, M., Teixeira, A., & Andrade, E. (2018). Use of remote sensing to identify areas at risk of degradation in the semi-arid region. 49(3).
 # 			<a href="https://www.scielo.br/j/rca/a/JByZddTmJGRh67Fj8xQWtZL/?lang=en#">doi: 10.5935/1806-6690.20180047</a></li>
-# 			<li>Barka, I., Bucha, T., Molnár, T., Móricz, N., Somogyi, Z., & Koreň, M. (2019). Suitability of MODIS-based NDVI index for forest monitoring and its seasonal applications in Central 
+# 			<li>Barka, I., Bucha, T., Molnár, T., Móricz, N., Somogyi, Z., & Koreň, M. (2019). Suitability of MODIS-based NDVI index for forest monitoring and its seasonal applications in Central
 # 			Europe. Central European Forestry Journal, 65(3-4), 206-217. <a href="https://sciendo.com/article/10.2478/forj-2019-0020">doi: 10.2478/forj-2019-0020</a></li>
 # 			</ul>
 
@@ -1041,7 +1041,7 @@
 # 		# with st.expander('Discussion board.', expanded=True):
 # 		st.image(r'./assets/header.jpg', use_column_width=True)
 # 		st.markdown(f"""
-# 		Here, individuals can post their ideas, provide feedback on the app and/or share the results of your exploration. Also, 
+# 		Here, individuals can post their ideas, provide feedback on the app and/or share the results of your exploration. Also,
 # 		the general public is encouraged to use this platform to participate in monitoring forest health and resources.
 # 		""", unsafe_allow_html=True)
 
@@ -1090,6 +1090,6 @@
 
 # 		# HtmlFile = open(r'./assets/map1.html', 'r', encoding='utf-8')
 # 		# components.html(HtmlFile.read(), height=500, width=700)
-		
+
 # if __name__ == '__main__':
 # 	main()
