@@ -54,8 +54,6 @@ def app():
                                 [125.4727148947,8.9828386907],\
                                 [125.4727148947,8.9012996164]]]"
 
-            
-      
             if user_input_method == 'Upload KML file':
                 inputFile = st.file_uploader(
                     "Upload a file",
@@ -383,30 +381,9 @@ def app():
     end_lower = hist_df[f"{enddate}"].quantile(0.25).min()
     end_upper = hist_df[f"{enddate}"].quantile(0.75).max()
 
-    hist = hist_df[(hist_df.iloc[:, 0] != 0) & (hist_df.iloc[:, 1] != 0)].copy()
-    hist['index'] = 'A'
-    hist = pd.melt(hist, id_vars=['index'])
-    
-    altC = (
-        alt.Chart(hist)
-        .transform_density(
-        'value',
-        as_=['value', 'density'], 
-        cumulative=False,
-        groupby=['variable'])
-        .mark_area(opacity=0.3)
-        .encode(
-            x=alt.X("value:Q"),
-            y=alt.Y("density:Q"),
-            color=alt.Color("variable:N", legend=alt.Legend(title='Date', orient="top-left")),
-            tooltip=[
-                alt.Tooltip("variable:N", title="Date"),
-                alt.Tooltip("value:Q", title='NDVI', format=",.4f"),
-                alt.Tooltip('density:Q', title='Density', format=",.4f")
-            ],
-        )
-        .interactive()
-    )
+    temp_df = hist_df[(hist_df.iloc[:, 0] != 0) & (hist_df.iloc[:, 1] != 0)].copy()
+    temp_df['index'] = 'A'
+    hist = pd.melt(temp_df, id_vars=['index'])
 
     x = np.array(pd.to_datetime(df.Timestamp), dtype=float)
     y = df.NDVI_Lowess
@@ -577,6 +554,32 @@ def app():
         <font color="#A42F25"><strong>{', '.join(decrease_list)}</strong></font>.</p>
         """,
         unsafe_allow_html=True,
+    )
+
+    if st.checkbox('Cumulative'):
+        cumulative = True
+    else: 
+        cumulative = False
+
+    altC = (
+        alt.Chart(hist)
+        .transform_density(
+        'value',
+        as_=['value', 'density'], 
+        cumulative=cumulative,
+        groupby=['variable'])
+        .mark_area(opacity=0.3)
+        .encode(
+            x=alt.X("value:Q"),
+            y=alt.Y("density:Q"),
+            color=alt.Color("variable:N", legend=alt.Legend(title='Date', orient="top-left")),
+            tooltip=[
+                alt.Tooltip("variable:N", title="Date"),
+                alt.Tooltip("value:Q", title='NDVI', format=",.4f"),
+                alt.Tooltip('density:Q', title='Value', format=",.4f")
+            ],
+        )
+        .interactive()
     )
 
     st.altair_chart(altC, use_container_width=True)
