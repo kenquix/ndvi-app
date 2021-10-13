@@ -561,22 +561,22 @@ def app():
     else: 
         cumulative = False
 
-    # altC = alt.Chart(hist).transform_density(
-    #     'value',
-    #     as_=['value', 'density'], 
-    #     cumulative=cumulative,
-    #     groupby=['variable']).mark_area(opacity=0.3).encode(
-    #         x=alt.X("value:Q"),
-    #         y=alt.Y("density:Q"),
-    #         color=alt.Color("variable:N", legend=alt.Legend(title='Date', orient="top-left")),
-    #         tooltip=[
-    #             alt.Tooltip("variable:N", title="Date"),
-    #             alt.Tooltip("value:Q", title='NDVI', format=",.4f"),
-    #             alt.Tooltip('density:Q', title='Value', format=",.4f")
-    #         ],
-    #     )
+    altC = alt.Chart(hist).transform_density(
+        'value',
+        as_=['value', 'density'], 
+        cumulative=cumulative,
+        groupby=['variable']).mark_area(opacity=0.3).encode(
+            x=alt.X("value:Q"),
+            y=alt.Y("density:Q"),
+            color=alt.Color("variable:N", legend=alt.Legend(title='Date', orient="top-left")),
+            tooltip=[
+                alt.Tooltip("variable:N", title="Date"),
+                alt.Tooltip("value:Q", title='NDVI', format=",.4f"),
+                alt.Tooltip('density:Q', title='Value', format=",.4f")
+            ],
+        )
 
-    # st.altair_chart(altC, use_container_width=True)
+    st.altair_chart(altC, use_container_width=True)
     st.markdown(
         f"<center>Figure 1. Distribution of NDVI values for images of selected dates</center><br>",
         unsafe_allow_html=True,
