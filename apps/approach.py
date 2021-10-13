@@ -81,14 +81,16 @@ def app():
         <br>
         <h3>Resources:</h3>
         <ul>
-        <li>Perez, G.J., and Comiso, J.C. (2014). <a = href="https://philjournalsci.dost.gov.ph/images/pdf/pjs_pdf/vol143no2/pdf/Seasonal_and_interannual_variability_of_philippine_vegetation.pdf">Seasonal and Interannual Variability of Philippine Vegetation as Seen from Space</a>, Philippine Journal of Science Vol. 143 No. 2 pp. 147-155 (ISI)</li>
-        <li>Aquino, D., Rocha Neto, O., Moreira, M., Teixeira, A., & Andrade, E. (2018). <a href="https://www.scielo.br/j/rca/a/JByZddTmJGRh67Fj8xQWtZL/?lang=en#">Use of remote sensing to identify areas at risk of degradation in the semi-arid region</a>. 49(3). 
-        doi: 10.5935/1806-6690.20180047</li>
-        <li>Barka, I., Bucha, T., Molnár, T., Móricz, N., Somogyi, Z., & Koreň, M. (2019). <a href="https://sciendo.com/article/10.2478/forj-2019-0020">Suitability of MODIS-based NDVI index for forest monitoring and its seasonal applications in Central 
-        Europe</a>. Central European Forestry Journal, 65(3-4), 206-217. doi: 10.2478/forj-2019-0020</li>
-        <li><a href=https://developers.google.com/earth-engine/datasets/catalog/LANDSAT_LC08_C01_T1_TOA>USGS Landsat 8 Collection 1 Tier 1 TOA Reflectance.</a> (2021). Retrieved {now}</li>
-        <li><a href="https://developers.google.com/earth-engine/tutorials/community/time-series-visualization-with-altair">Time Series Visualization with Altair</a> | Google Earth Engine. (2021). Retrieved {now}</li>
-        <li><a href="https://boundingbox.klokantech.com/">Bounding Box Tool</a>. (2021). Retrieved {now}</li>
+        <li>Perez, G.J., and Comiso, J.C. (2014). Seasonal and Interannual Variability of Philippine Vegetation as Seen from Space, Philippine Journal of Science Vol. 143 No. 2 pp. 147-155 (ISI). Accessed <a = href="https://philjournalsci.dost.gov.ph/images/pdf/pjs_pdf/vol143no2/pdf/Seasonal_and_interannual_variability_of_philippine_vegetation.pdf">here</a>.</li>
+        <li>Aquino, D., Rocha Neto, O., Moreira, M., Teixeira, A., & Andrade, E. (2018). Use of remote sensing to identify areas at risk of degradation in the semi-arid region. 49(3). 
+        doi: 10.5935/1806-6690.20180047. Accessed <a href="https://www.scielo.br/j/rca/a/JByZddTmJGRh67Fj8xQWtZL/?lang=en#">here</a>.</li>
+        <li>Barka, I., Bucha, T., Molnár, T., Móricz, N., Somogyi, Z., & Koreň, M. (2019). Suitability of MODIS-based NDVI index for forest monitoring and its seasonal applications in Central 
+        Europe. Central European Forestry Journal, 65(3-4), 206-217. doi: 10.2478/forj-2019-0020. Accessed <a href="https://sciendo.com/article/10.2478/forj-2019-0020">here</a>.</li>
+        <li>USGS Landsat 8 Collection 1 Tier 1 TOA Reflectance. (2021). Retrieved {now}. Accessed <a href=https://developers.google.com/earth-engine/datasets/catalog/LANDSAT_LC08_C01_T1_TOA>here.</a></li>
+        <li>Time Series Visualization with Altair | Google Earth Engine. (2021). Retrieved {now}. Accessed <a href="https://developers.google.com/earth-engine/tutorials/community/time-series-visualization-with-altair">here</a>.</li>
+        <li>Bounding Box Tool. (2021). Retrieved {now}. Accesed <a href="https://boundingbox.klokantech.com/">here</a>.</li>
+        <li>Sparta Portal. (2021). Retrieved 13 October 2021. Accessed <a href="https://sparta.dap.edu.ph/opendata/lgu/butuancity/datasets">here</a>.</li>
+        <li>GADM. (2021). Retrieved 13 October 2021, Accessed <a href="https://gadm.org/download_country_v3.html">here</a>.</li>
         </ul>
 
         """,

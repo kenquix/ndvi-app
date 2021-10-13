@@ -1,0 +1,40 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<kml xmlns="http://www.opengis.net/kml/2.2">
+<Document id="root_doc">
+<Schema name="selection_brgy" id="selection_brgy">
+	<SimpleField name="GID_0" type="string"></SimpleField>
+	<SimpleField name="NAME_0" type="string"></SimpleField>
+	<SimpleField name="GID_1" type="string"></SimpleField>
+	<SimpleField name="NAME_1" type="string"></SimpleField>
+	<SimpleField name="NL_NAME_1" type="string"></SimpleField>
+	<SimpleField name="GID_2" type="string"></SimpleField>
+	<SimpleField name="NAME_2" type="string"></SimpleField>
+	<SimpleField name="NL_NAME_2" type="string"></SimpleField>
+	<SimpleField name="GID_3" type="string"></SimpleField>
+	<SimpleField name="NAME_3" type="string"></SimpleField>
+	<SimpleField name="VARNAME_3" type="string"></SimpleField>
+	<SimpleField name="NL_NAME_3" type="string"></SimpleField>
+	<SimpleField name="TYPE_3" type="string"></SimpleField>
+	<SimpleField name="ENGTYPE_3" type="string"></SimpleField>
+	<SimpleField name="CC_3" type="string"></SimpleField>
+	<SimpleField name="HASC_3" type="string"></SimpleField>
+</Schema>
+<Folder><name>selection_brgy</name>
+  <Placemark>
+	<Style><LineStyle><color>ff0000ff</color></LineStyle><PolyStyle><fill>0</fill></PolyStyle></Style>
+	<ExtendedData><SchemaData schemaUrl="#selection_brgy">
+		<SimpleData name="GID_0">PHL</SimpleData>
+		<SimpleData name="NAME_0">Philippines</SimpleData>
+		<SimpleData name="GID_1">PHL.2_1</SimpleData>
+		<SimpleData name="NAME_1">Agusan del Norte</SimpleData>
+		<SimpleData name="GID_2">PHL.2.2_1</SimpleData>
+		<SimpleData name="NAME_2">Butuan City</SimpleData>
+		<SimpleData name="GID_3">PHL.2.2.2_1</SimpleData>
+		<SimpleData name="NAME_3">Agusan Pequeno</SimpleData>
+		<SimpleData name="TYPE_3">Barangay</SimpleData>
+		<SimpleData name="ENGTYPE_3">Village</SimpleData>
+	</SchemaData></ExtendedData>
+      <Polygon><outerBoundaryIs><LinearRing><coordinates>125.536071777344,8.97692012786871 125.535720825195,8.97535991668713 125.537818908691,8.97134971618658 125.535949707031,8.97068977355963 125.534233093262,8.97002983093267 125.533348083496,8.97327041625988 125.531883239746,8.97430038452148 125.531387329102,8.97655963897699 125.530906677246,8.97867012023931 125.530227661133,8.98091983795166 125.52864074707,8.98357963562017 125.526908874512,8.98577022552485 125.525741577148,8.98721027374279 125.524696350098,8.98904037475592 125.526878356934,8.98908996582031 125.529266357422,8.98859977722162 125.530883789062,8.98908042907721 125.532180786133,8.98931026458746 125.534202575684,8.98943042755133 125.536697387695,8.98933029174799 125.536651611328,8.9885301589967 125.537437438965,8.98723030090332 125.538482666016,8.98639011383051 125.539962768555,8.98517990112305 125.539337158203,8.98390960693359 125.538383483887,8.9829502105714 125.536407470703,8.98208999633789 125.534942626953,8.98180961608887 125.533500671387,8.98132991790783 125.534889221191,8.97955989837652 125.535713195801,8.97856044769287 125.536071777344,8.97692012786871</coordinates></LinearRing></outerBoundaryIs></Polygon>
+  </Placemark>
+</Folder>
+</Document></kml>

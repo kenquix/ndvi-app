@@ -22,9 +22,10 @@ class MultiApp:
 
     def run(self):
         st.sidebar.markdown('Navigation')
-        app = st.sidebar.radio(
-            '',
-            self.apps,
-            format_func=lambda app: app['title'])
+        titles = [a["title"] for a in self.apps]
+        functions = [a["function"] for a in self.apps]
+        title = st.sidebar.radio(
+            label='Go To',
+            options=titles)
 
-        app['function']()
+        functions[titles.index(title)]()

@@ -4,6 +4,11 @@ from apps import home, approach, prototype, board, team # import your app module
 
 st.set_page_config(page_title='Vega Map', page_icon=r'./assets/logo.png')
 
+# st.markdown(
+#     "<style>div.row-widget.stRadio > div{flex-direction:row;}</style>",
+#     unsafe_allow_html=True,
+# )
+
 # remove 'Made with Streamlit' footer MainMenu {visibility: hidden;}
 hide_streamlit_style = """
 			<style>
@@ -38,6 +43,17 @@ make_map_responsive= """
     </style>
     """
 st.markdown(make_map_responsive, unsafe_allow_html=True)
+
+st.markdown(
+    f'''
+        <style>
+            .sidebar .sidebar-content {{
+                width: 300px;
+            }}
+        </style>
+    ''',
+    unsafe_allow_html=True
+)
 
 app = MultiApp()
 
