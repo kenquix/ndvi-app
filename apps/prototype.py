@@ -381,10 +381,6 @@ def app():
     end_lower = hist_df[f"{enddate}"].quantile(0.25).min()
     end_upper = hist_df[f"{enddate}"].quantile(0.75).max()
 
-    temp_df = hist_df[(hist_df.iloc[:, 0] != 0) & (hist_df.iloc[:, 1] != 0)].copy()
-    temp_df['index'] = 'A'
-    hist = pd.melt(temp_df, id_vars=['index'])
-
     x = np.array(pd.to_datetime(df.Timestamp), dtype=float)
     y = df.NDVI_Lowess
     results = np.polyfit(x, y, deg=1)
@@ -561,6 +557,9 @@ def app():
     else: 
         cumulative = False
 
+    temp_df = hist_df[(hist_df.iloc[:, 0] != 0) & (hist_df.iloc[:, 1] != 0)].copy()
+    temp_df['index'] = 'A'
+    hist = pd.melt(temp_df, id_vars=['index'])
     altC = alt.Chart(hist).transform_density(
         'value',
         as_=['value', 'density'], 
