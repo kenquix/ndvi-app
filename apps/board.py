@@ -5,7 +5,7 @@ import streamlit.components.v1 as components
 
 def app():
     # with st.expander('Discussion board.', expanded=True):
-    st.image(r"./assets/header.jpg", use_column_width=True)
+    # st.image(r"./assets/header.jpg", use_column_width=True)
     st.markdown(
         f"""
     Here, individuals can post their ideas, provide feedback on the app and/or share the results of your exploration. Also, 
@@ -13,6 +13,8 @@ def app():
     """,
         unsafe_allow_html=True,
     )
+
+    st.markdown('---')
 
     placeholder = st.empty()
     with st.spinner(text="Loading the discussion board..."):

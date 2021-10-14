@@ -3,7 +3,7 @@ from datetime import datetime
 
 
 def app():
-    st.title("How the challenge was addressed")
+    st.header("How the challenge was addressed")
     st.markdown("---")
     st.markdown(
         f"""

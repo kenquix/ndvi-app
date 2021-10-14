@@ -154,9 +154,9 @@ def app():
             gpd.io.file.fiona.drvsupport.supported_drivers["KML"] = "rw"
             gpd.io.file.fiona.drvsupport.supported_drivers["kml"] = "rw"
             with ds2_col:
-                boundary = st.selectbox(label='Select Boundary', options=['Admin (Brgy Level)', 'Land Cover'], help='Define the boundary to be used')
+                boundary = st.selectbox(label='Select Boundary', options=['Administrative (Brgy Level)', 'Land Cover'], help='Define the boundary to be used')
 
-            if boundary == 'Admin (Brgy Level)':
+            if boundary == 'Administrative (Brgy Level)':
                 with ds3_col:
                     land_cover_data_year = st.selectbox(label='Select Land Cover as of', options=[], help='This option is not available with the current selection')
                 with b1:
@@ -219,7 +219,7 @@ def app():
                 )
 
             except IndexError as e:
-                st.error('No available images for the selected region')
+                st.error('Something went wrong! There seems to be no available images for the current selection. Please modify your selections or refresh the page.')
                 submit_button = st.form_submit_button(label='Run selection')
                 return
 
@@ -321,61 +321,6 @@ def app():
     highlightA = alt.selection(
         type="single", on="mouseover", fields=["Year"], nearest=True
     )
-
-    baseB = alt.Chart(df).encode(
-        x=alt.X("DOY:Q", scale=alt.Scale(domain=(0, 340)), title="DOY")
-    )
-
-    lower = df.groupby("DOY")["NDVI"].quantile(0.25).min()
-    upper = df.groupby("DOY")["NDVI"].quantile(0.75).max()
-
-    lineB = baseB.mark_line().encode(
-        y=alt.Y("median(NDVI):Q", scale=alt.Scale(domain=[lower, upper])),
-    )
-
-    rainy_df = pd.DataFrame({"x1": [152], "x2": [334]})
-
-    rainy_season = (
-        alt.Chart(rainy_df)
-        .mark_rect(opacity=0.2, color="#A5DCFF")
-        .encode(
-            x=alt.X("x1", title=""),
-            x2="x2",
-            y=alt.value(0),  # 0 pixels from top
-            y2=alt.value(300),  # 300 pixels from top
-        )
-    )
-
-    dry_df = pd.DataFrame({"x1": [0, 334], "x2": [152, 360]})
-
-    dry_season1 = (
-        alt.Chart(dry_df)
-        .mark_rect(opacity=0.2, color="#b47e4f")
-        .encode(
-            x=alt.X("x1", title=""),
-            x2="x2",
-            y=alt.value(0),  # 0 pixels from top
-            y2=alt.value(300),  # 300 pixels from top
-        )
-    )
-
-    bandB = baseB.mark_errorband(extent="iqr", color="#3D3D45", opacity=0.3).encode(
-        y="NDVI:Q"
-    )
-
-    pointsB = (
-        baseB.mark_circle()
-        .encode(
-            opacity=alt.value(0),
-            tooltip=[
-                alt.Tooltip("DOY:Q", title="DOY"),
-                alt.Tooltip("median(NDVI):Q", title="NDVI", format=",.4f"),
-            ],
-        )
-        .add_selection(highlightA)
-    )
-
-    altB = (lineB + bandB + pointsB + rainy_season + dry_season1).interactive()
 
     start_lower = hist_df[f"{startdate}"].quantile(0.25).min()
     start_upper = hist_df[f"{startdate}"].quantile(0.75).max()
@@ -560,40 +505,65 @@ def app():
 
     temp_df = hist_df[(hist_df.iloc[:, 0] != 0) & (hist_df.iloc[:, 1] != 0)].copy()
     hist_df = pd.melt(temp_df)
-    # altC = alt.Chart(hist).transform_density(
-    #     'value',
-    #     as_=['value', 'density'], 
-    #     cumulative=cumulative,
-    #     groupby=['variable']).mark_area(opacity=0.3).encode(
-    #         x=alt.X("value:Q"),
-    #         y=alt.Y("density:Q"),
-    #         color=alt.Color("variable:N", legend=alt.Legend(title='Date', orient="top-left")),
-    #         tooltip=[
-    #             alt.Tooltip("variable:N", title="Date"),
-    #             alt.Tooltip("value:Q", title='NDVI', format=",.4f"),
-    #             alt.Tooltip('density:Q', title='Value', format=",.4f")
-    #         ],
-    #     )
 
     s = sns.kdeplot(data=hist_df, x='value', hue='variable')
     before = s.get_lines()[0].get_data()
     after = s.get_lines()[1].get_data()
-    before_df = pd.DataFrame({'x':before[0], 'y':before[1], 'Date':f'{startdate}'})
-    after_df = pd.DataFrame({'x':after[0], 'y':after[1], 'Date':f'{enddate}'})
-    data = before_df.append(after_df)
-    altC = alt.Chart(data
-    ).mark_area(opacity=0.3
-    ).encode(
-        x=alt.X('x:Q'), 
-        y=alt.Y('y:Q'), 
-        color=alt.Color('Date:N', legend=alt.Legend(title='Date', orient="top-left")),
-        tooltip=[
-                alt.Tooltip("Date:N", title="Date"),
-                alt.Tooltip("x:Q", title='NDVI', format=",.4f"),
-                alt.Tooltip('y:Q', title='Value', format=",.4f")
-            ])
+    before_df = pd.DataFrame({'NDVI':before[0], 'Density':before[1], 'Date':f'{startdate}'})
+    before_df[before_df['Density'] > 1]['Density'] = 1
+    after_df = pd.DataFrame({'NDVI':after[0], 'Density':after[1], 'Date':f'{enddate}'})
+    after_df[after_df['Density'] > 1]['Density'] = 1
 
-    st.altair_chart(altC, use_container_width=True)
+    if cumulative:
+        before_df['Density'] = before_df['Density'].cumsum().div(before_df['Density'].cumsum().max())
+        after_df['Density'] = after_df['Density'].cumsum().div(after_df['Density'].cumsum().max())
+    data = before_df.append(after_df)
+    data = data.round(4)
+    nearest = alt.selection(
+        type="single",
+        nearest=True,
+        on="mouseover",
+        fields=["NDVI"],
+        empty="none",
+    )
+
+    selectors = (
+        alt.Chart(data)
+        .mark_point()
+        .encode(x="NDVI:Q", opacity=alt.value(0))
+        .add_selection(nearest)
+    )
+
+    rules = (
+        alt.Chart(data)
+        .mark_rule(color="#1E1E1E", opacity=0.2, strokeWidth=0.5)
+        .encode(x="NDVI:Q",)
+        .transform_filter(nearest)
+    )
+
+    altC = alt.Chart(data
+        ).mark_area(opacity=0.3
+        ).encode(
+            x=alt.X('NDVI:Q'), 
+            y=alt.Y('Density:Q'), 
+            color=alt.Color('Date:N', legend=alt.Legend(title='Date', orient="top-left")),
+            tooltip=[
+                    alt.Tooltip("Date:N", title="Date"),
+                    alt.Tooltip("NDVI:Q", title='NDVI', format=",.4f"),
+                    alt.Tooltip('Density:Q', title='Value', format=",.4f")
+                ])
+
+    # Draw points on the line, and highlight based on selection
+    points = altC.mark_point(color="#A3AF80").encode(
+        opacity=alt.condition(nearest, alt.value(1), alt.value(0))
+    )
+
+    # Draw text labels near the points, and highlight based on selection
+    text = altC.mark_text(align="left", dx=5, dy=-5).encode(
+        text=alt.condition(nearest, "Density", alt.value(" "))
+    )
+
+    st.altair_chart(altC + rules + selectors + points + text, use_container_width=True)
     st.markdown(
         f"<center>Figure 1. Distribution of NDVI values for images of selected dates</center><br>",
         unsafe_allow_html=True,
@@ -786,9 +756,8 @@ def app():
             is observed in <strong>{df.loc[df_annual.NDVI.argmax(),'Timestamp'].strftime('%Y')}</strong>, while minimum NDVI (i.e., <strong>{df_annual.NDVI.min():.2f})</strong>
             is observed in <strong>{df.loc[df_annual.NDVI.argmin(),'Timestamp'].strftime('%Y')}</strong>.</p>
 
-            <p align="justify">The red line corresponds to the average NDVI over the AOI and DOI.</p>		
-            <p align="justify">Upon ticking the checkbox, the plot now shows the standardized values of the NDVI time-series, setting the mean of the series to zero (0) with a
-            standard deviation equal to one (1).</p>
+            <p align="justify">The red line corresponds to the selected line aggregation of NDVI over the AOI and DOI.</p>		
+
             """,
             unsafe_allow_html=True,
         )
@@ -840,7 +809,98 @@ def app():
             """,
             unsafe_allow_html=True,
         )
-        
+
+    df = df.round(4)
+    nearest2 = alt.selection(
+            type="single",
+            nearest=True,
+            on="mouseover",
+            fields=["DOY"],
+            empty="none",
+        )
+
+    selectors2 = (
+            alt.Chart(df)
+            .mark_point()
+            .encode(x="DOY:Q", opacity=alt.value(0))
+            .add_selection(nearest2)
+        )
+
+
+    rules2 = (
+        alt.Chart(df)
+        .mark_rule(color="#838479", opacity=0.2, strokeWidth=0.5)
+        .encode(x="DOY:Q",)
+        .transform_filter(nearest2)
+    )
+
+    baseB = alt.Chart(df).encode(
+        x=alt.X("DOY:Q", scale=alt.Scale(domain=(0, 340)), title="DOY")
+
+    )
+
+    lower = df.groupby("DOY")["NDVI"].quantile(0.25).min()
+    upper = df.groupby("DOY")["NDVI"].quantile(0.75).max()
+
+    lineB = baseB.mark_line().encode(
+        y=alt.Y("median(NDVI):Q", scale=alt.Scale(domain=[lower, upper])),
+        tooltip=[alt.Tooltip('DOY:Q', title='DOY'), alt.Tooltip('median(NDVI):Q', title='Median NDVI')]
+    )
+
+    rainy_df = pd.DataFrame({"x1": [152], "x2": [334]})
+
+    rainy_season = (
+        alt.Chart(rainy_df)
+        .mark_rect(opacity=0.2, color="#A5DCFF")
+        .encode(
+            x=alt.X("x1", title=""),
+            x2="x2",
+            y=alt.value(0),  # 0 pixels from top
+            y2=alt.value(300),  # 300 pixels from top
+        )
+    )
+
+    dry_df = pd.DataFrame({"x1": [0, 334], "x2": [152, 360]})
+
+    dry_season1 = (
+        alt.Chart(dry_df)
+        .mark_rect(opacity=0.2, color="#b47e4f")
+        .encode(
+            x=alt.X("x1", title=""),
+            x2="x2",
+            y=alt.value(0),  # 0 pixels from top
+            y2=alt.value(300),  # 300 pixels from top
+        )
+    )
+
+    bandB = baseB.mark_errorband(extent="iqr", color="#3D3D45", opacity=0.3).encode(
+        y="NDVI:Q"
+    )
+
+    # pointsB = (
+    #     baseB.mark_circle()
+    #     .encode(
+    #         opacity=alt.value(0),
+    #         tooltip=[
+    #             alt.Tooltip("DOY:Q", title="DOY"),
+    #             alt.Tooltip("median(NDVI):Q", title="NDVI", format=",.4f"),
+    #         ],
+    #     )
+    #     .add_selection(highlightA)
+    # )
+
+    # Draw points on the line, and highlight based on selection
+    pointsB = lineB.mark_point(color="#496586").encode(
+        opacity=alt.condition(nearest2, alt.value(1), alt.value(0))
+    )
+
+    # Draw text labels near the points, and highlight based on selection
+    text2 = lineB.mark_text(align="left", dx=5, dy=-5).encode(
+        text=alt.condition(nearest2, "median(NDVI):Q", alt.value(" "))
+    )
+
+    altB = (lineB + bandB + rainy_season + dry_season1 + rules2 + selectors2 + pointsB + text2).interactive()
+
     st.altair_chart(altB, use_container_width=True)
     st.markdown(
         "<center>Figure 3. Variation in NDVI values per Day of Year (DOY)</center><br>",
