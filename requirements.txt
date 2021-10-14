@@ -10,4 +10,4 @@ altair_saver
 imageio
 geopandas
 millify
-empiricaldist
+seaborn

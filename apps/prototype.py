@@ -25,6 +25,7 @@ from statsmodels.nonparametric.smoothers_lowess import lowess
 
 import folium
 from folium import plugins
+import seaborn as sns
 
 from utils.utils import *
 
@@ -558,22 +559,39 @@ def app():
         cumulative = False
 
     temp_df = hist_df[(hist_df.iloc[:, 0] != 0) & (hist_df.iloc[:, 1] != 0)].copy()
-    temp_df['index'] = 'A'
-    hist = pd.melt(temp_df, id_vars=['index'])
-    altC = alt.Chart(hist).transform_density(
-        'value',
-        as_=['value', 'density'], 
-        cumulative=cumulative,
-        groupby=['variable']).mark_area(opacity=0.3).encode(
-            x=alt.X("value:Q"),
-            y=alt.Y("density:Q"),
-            color=alt.Color("variable:N", legend=alt.Legend(title='Date', orient="top-left")),
-            tooltip=[
-                alt.Tooltip("variable:N", title="Date"),
-                alt.Tooltip("value:Q", title='NDVI', format=",.4f"),
-                alt.Tooltip('density:Q', title='Value', format=",.4f")
-            ],
-        )
+    hist_df = pd.melt(temp_df)
+    # altC = alt.Chart(hist).transform_density(
+    #     'value',
+    #     as_=['value', 'density'], 
+    #     cumulative=cumulative,
+    #     groupby=['variable']).mark_area(opacity=0.3).encode(
+    #         x=alt.X("value:Q"),
+    #         y=alt.Y("density:Q"),
+    #         color=alt.Color("variable:N", legend=alt.Legend(title='Date', orient="top-left")),
+    #         tooltip=[
+    #             alt.Tooltip("variable:N", title="Date"),
+    #             alt.Tooltip("value:Q", title='NDVI', format=",.4f"),
+    #             alt.Tooltip('density:Q', title='Value', format=",.4f")
+    #         ],
+    #     )
+
+    s = sns.kdeplot(data=hist_df, x='value', hue='variable')
+    before = s.get_lines()[0].get_data()
+    after = s.get_lines()[1].get_data()
+    before_df = pd.DataFrame({'x':before[0], 'y':before[1], 'Date':f'{startdate}'})
+    after_df = pd.DataFrame({'x':after[0], 'y':after[1], 'Date':f'{enddate}'})
+    data = before_df.append(after_df)
+    altC = alt.Chart(data
+    ).mark_area(opacity=0.3
+    ).encode(
+        x=alt.X('x:Q'), 
+        y=alt.Y('y:Q'), 
+        color=alt.Color('Date:N', legend=alt.Legend(title='Date', orient="top-left")),
+        tooltip=[
+                alt.Tooltip("Date:N", title="Date"),
+                alt.Tooltip("x:Q", title='NDVI', format=",.4f"),
+                alt.Tooltip('y:Q', title='Value', format=",.4f")
+            ])
 
     st.altair_chart(altC, use_container_width=True)
     st.markdown(
