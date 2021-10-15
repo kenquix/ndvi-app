@@ -190,12 +190,7 @@ def app():
                         + list(butuan_boundary_gdf["NAME_3"].unique()),
                         help="List of Barangays of Butuan",
                     )
-                # with b2:
-                #     selected_lcov = st.selectbox(
-                #         label="Select Land Cover Data",
-                #         options=[],
-                #         help="This option is not available with the current selection",
-                #     )
+
                 if selected_brgy != "Select All":
                     selected_boundary_gdf = butuan_boundary_gdf[
                         butuan_boundary_gdf["NAME_3"] == selected_brgy
@@ -214,12 +209,7 @@ def app():
                 butuan_lcov_gdf = gpd.read_file(
                     f"./assets/butuan_landcover_{land_cover_data_year}.shp"
                 )
-                # with b1:
-                #     selected_brgy = st.selectbox(
-                #         label="Select Barangay",
-                #         options=[],
-                #         help="This option is not available with the current selection",
-                #     )
+
                 with control0:
                     selected_lcov = st.selectbox(
                         label="Select Land Cover",
@@ -321,7 +311,7 @@ def app():
         df["Timestamp"] = pd.to_datetime(df.Timestamp)
         df = df.round(4)
         df_annual = transform(df)
-
+        df.to_csv(f'{selected_brgy}.csv', index=False)
     visParams = {
         "min": 0,
         "max": 1,
@@ -362,6 +352,8 @@ def app():
     # basemaps["Google Terrain"].add_to(my_map)
     # basemaps["Google Maps"].add_to(my_map)
 
+    my_map.add_ee_layer(aoi.geometry(), {}, 'Boundary')
+    
     my_map.add_ee_layer(
         diff_img.clip(aoi.geometry()), visParams_diff, "Difference Image"
     )
@@ -375,6 +367,8 @@ def app():
         visParams,
         f'{enddate.strftime("%d %B %Y")} Image',
     )
+
+
 
     # # Add a layer control panel to the map.
     my_map.add_child(folium.LayerControl())
