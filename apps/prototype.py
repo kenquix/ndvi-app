@@ -22,7 +22,7 @@ import streamlit.components.v1 as components
 from streamlit_folium import folium_static
 
 from statsmodels.nonparametric.smoothers_lowess import lowess
-
+from altair_saver import save
 import folium
 from folium import plugins
 import seaborn as sns

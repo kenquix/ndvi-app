@@ -12,3 +12,4 @@ geopandas
 millify
 seaborn
 fpdf
+altair_saver
