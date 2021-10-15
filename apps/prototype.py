@@ -519,7 +519,7 @@ def app():
                     img = Image.open(timelapse_dir)
                     draw = ImageDraw.Draw(img)
                     draw.text((0, 0), f"Year {i}")
-                    img.save(timelapse_dir)
+                    # img.save(timelapse_dir)
                     filenames.append(timelapse_dir)
 
                 for filename in filenames:
@@ -624,7 +624,7 @@ def app():
 
     nearest, selectors, rules, points, text = ruler(data, "NDVI", "Q", altC, "Density")
     fig1 = altCa + altC + rules + selectors + points + text
-    fig1.save('./assets/fig1.png')
+    # fig1.save('./assets/fig1.png')
     st.altair_chart(fig1, use_container_width=True)
 
     st.markdown(
@@ -715,7 +715,7 @@ def app():
         fig2 = (
             annual + linesC + regC + rules + selectors + points + text
         ).interactive(bind_y=False)
-        fig2.save('./assets/fig2.png')
+        # fig2.save('./assets/fig2.png')
 
         st.altair_chart(fig2, use_container_width=True)
         st.markdown(
@@ -793,7 +793,7 @@ def app():
         fig2 = (
             annual + linesA + rule + bandA + selectors + rules + points + text
         ).interactive(bind_y=False)
-        fig2.save('./assets/fig2.png')
+        # fig2.save('./assets/fig2.png')
         st.altair_chart(fig2, use_container_width=True)
         st.markdown(
             "<center>Figure 2. Mean NDVI Time-series over the AOI for imagery at every available date</center><br>",
@@ -858,7 +858,7 @@ def app():
         fig2 = (annual + barA + rule + selectors + rules + points + text).interactive(
             bind_y=False
         )
-        fig2.save('./assets/fig2.png')
+        # fig2.save('./assets/fig2.png')
         st.altair_chart(fig2, use_container_width=True)
         st.markdown(
             "<center>Figure 2. Standardized Mean NDVI Time-series over the AOI for imagery at every available date</center><br>",
@@ -929,7 +929,7 @@ def app():
     fig3 = (
         lineB + bandB + rainy_season + dry_season1 + rules + selectors + points + text
     ).interactive()
-    fig3.save('./assets/fig3.png')
+    # fig3.save('./assets/fig3.png')
     st.altair_chart(fig3, use_container_width=True)
     st.markdown(
         "<center>Figure 3. Variation in NDVI values per Day of Year (DOY)</center><br>",
