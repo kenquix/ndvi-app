@@ -2,6 +2,7 @@
 """
 import streamlit as st
 
+
 class MultiApp:
     def __init__(self):
         self.apps = []
@@ -15,17 +16,12 @@ class MultiApp:
         title:
             title of the app. Appears in the dropdown in the sidebar.
         """
-        self.apps.append({
-            "title": title,
-            "function": func
-        })
+        self.apps.append({"title": title, "function": func})
 
     def run(self):
-        st.sidebar.markdown('Navigation')
+        st.sidebar.markdown("Navigation")
         titles = [a["title"] for a in self.apps]
         functions = [a["function"] for a in self.apps]
-        title = st.sidebar.radio(
-            label='Go To',
-            options=titles)
+        title = st.sidebar.radio(label="Go To", options=titles)
 
         functions[titles.index(title)]()

@@ -34,9 +34,7 @@ def set_heroku_vars(token_name="EARTHENGINE_TOKEN"):
                     )
                 else:
                     check_call(
-                        ["heroku", "config:set", secret],
-                        stdout=DEVNULL,
-                        stderr=STDOUT,
+                        ["heroku", "config:set", secret], stdout=DEVNULL, stderr=STDOUT,
                     )
 
     except Exception as e:

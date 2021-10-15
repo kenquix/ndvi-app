@@ -27,36 +27,61 @@ import folium
 from folium import plugins
 import seaborn as sns
 
+from fpdf import FPDF
+
 from utils.utils import *
 
 def app():
+    class PDF(FPDF):
+        def header(self):
+            # Logo
+            self.image(r'./assets/header.jpg', 10, 8, 33)
+            # Arial bold 15
+            self.set_font('Arial', 'B', 15)
+            # Move to the right
+            self.cell(80)
+            # Title
+            self.cell(30, 10, 'Vegetation Assessment and Monitoring Report', 0, 0, 'C')
+            # Line break
+            self.ln(20)
+
+        # Page footer
+        def footer(self):
+            # Position at 1.5 cm from bottom
+            self.set_y(-15)
+            # Arial italic 8
+            self.set_font('Arial', 'I', 8)
+            # Page number
+            self.cell(0, 10, 'Page ' + str(self.page_no()) + '/{nb}', 0, 0, 'C')
+
     Map = geemap.Map()
-    # st.image(r"./assets/header.jpg", use_column_width=True)
     st.header("Vegetation Assessment and Monitoring App")
 
     _, ds1_col, ds2_col, ds3_col, _ = st.columns((0.15, 3, 3, 3, 0.15))
-    
+
     with ds1_col:
-        datasource =st.selectbox(label='Select AOI:', options=['User-Defined', 'Butuan City'], index=1, help='AOI - Area of Interest')
-    with st.form(key='form1', clear_on_submit=False):    
-        if datasource == 'User-Defined':
+        datasource = st.selectbox(
+            label="Select AOI:",
+            options=["User-Defined", "Butuan City"],
+            index=1,
+            help="AOI - Area of Interest",
+        )
+    with st.form(key="form1", clear_on_submit=False):
+        if datasource == "User-Defined":
             with ds2_col:
-                user_input_method = st.radio(label='Select input method', options=['Upload KML file', 'Draw bounding box'], help='Options to provide user-defined AOI')
-            # st.subheader("A. Data Collection")
-            # with st.expander("Click to expand", expanded=False):
-            # st.markdown(
-            #     f"""
-            #     <p align="justify">Select an Area of Interest (AOI) by either <strong>(a) uploading a local file</strong> (*.KML format) or <strong>(b) drawing a bounding box</strong>.</p> 
-            #     """,
-            #     unsafe_allow_html=True,
-            # )
+                user_input_method = st.radio(
+                    label="Select input method",
+                    options=["Upload KML file", "Draw bounding box"],
+                    help="Options to provide user-defined AOI",
+                )
+
             default_region = "[[[125.4727148947,8.9012996164],\
                                 [125.5990576681,8.9012996164],\
                                 [125.5990576681,8.9828386907],\
                                 [125.4727148947,8.9828386907],\
                                 [125.4727148947,8.9012996164]]]"
 
-            if user_input_method == 'Upload KML file':
+            if user_input_method == "Upload KML file":
                 inputFile = st.file_uploader(
                     "Upload a file",
                     type=["kml"],
@@ -64,7 +89,7 @@ def app():
                 )
                 try:
                     if inputFile is None:
-                            data =json.loads(default_region)
+                        data = json.loads(default_region)
 
                     else:
                         gpd.io.file.fiona.drvsupport.supported_drivers["KML"] = "rw"
@@ -85,13 +110,13 @@ def app():
 
                     ne = [[np.min(lat_list), np.min(lon_list)]]
                     sw = [[np.max(lat_list), np.max(lon_list)]]
-                    
+
                 except:
                     st.error(
                         f"Error: Expected a different input. Make sure you selected the GEOJSON format."
                     )
-                    submit_button = st.form_submit_button(label='Run selection')
-                    return 
+                    submit_button = st.form_submit_button(label="Run selection")
+                    return
             else:
                 st.markdown(
                     '<p style="font-size:13px">Draw a bounding box</p>',
@@ -110,15 +135,10 @@ def app():
                 )
                 components.iframe("https://boundingbox.klokantech.com/", height=500)
 
-                # dc1, dc2 = st.columns((3.5,1.5))
-                # with dc1:
                 inputRegion = st.text_input(
                     f"Paste AOI coordinates here:",
                     help="Currently, only GeoJSON formatted AOI is accepted",
                 )
-            # with dc2:
-            #     cloud_score = st.number_input('Select cloud mask value', 0, 100, 20, 1,
-            #     help='Computes a simple cloud-likelihood score in the range [0,100]. Default is 20')
 
                 try:
                     if len(inputRegion) == 0:
@@ -145,51 +165,95 @@ def app():
                     st.error(
                         f"Error: Expected a different input. Make sure you selected the GEOJSON format."
                     )
-                    submit_button = st.form_submit_button(label='Run selection')
+                    submit_button = st.form_submit_button(label="Run selection")
                     return
 
-        elif datasource == 'Butuan City':
-            b1, b2 = st.columns(2)
-            butuan_boundary_gdf = gpd.read_file('./assets/butuan.shp')
-            
+        elif datasource == "Butuan City":
+            control0, _, control1, _, control2 = st.columns((1.5, 0.25, 3, 0.2, 1))
+            butuan_boundary_gdf = gpd.read_file("./assets/butuan.shp")
+
             gpd.io.file.fiona.drvsupport.supported_drivers["KML"] = "rw"
             gpd.io.file.fiona.drvsupport.supported_drivers["kml"] = "rw"
 
             with ds2_col:
-                boundary = st.selectbox(label='Select Boundary', options=['Administrative (Brgy Level)', 'Land Cover'], help='Define the boundary to be used')
+                boundary = st.selectbox(
+                    label="Select Boundary",
+                    options=["Administrative (Brgy Level)", "Land Cover", "Production and Protection"],
+                    help="Define the boundary to be used",
+                )
 
-            if boundary == 'Administrative (Brgy Level)':
-                # with ds3_col:
-                #     land_cover_data_year = st.selectbox(label='Select Land Cover as of', options=[], help='This option is not available with the current selection')
-                with b1:
-                    selected_brgy = st.selectbox(label='Select Barangay', options = ['Select All'] + list(butuan_boundary_gdf['NAME_3'].unique()), help='List of Barangays of Butuan')
-                with b2:
-                    selected_lcov = st.selectbox(label='Select Land Cover Data', options=[], help='This option is not available with the current selection')
-                if selected_brgy != 'Select All':
-                    selected_boundary_gdf = butuan_boundary_gdf[butuan_boundary_gdf['NAME_3'] == selected_brgy]
-                    selected_boundary_gdf.to_file('./assets/selection_brgy.kml', driver='KML')
-                    input_df = gpd.read_file('./assets/selection_brgy.kml', driver="KML")
+            if boundary == "Administrative (Brgy Level)":
+                with control0:
+                    selected_brgy = st.selectbox(
+                        label="Select Barangay",
+                        options=["Select All"]
+                        + list(butuan_boundary_gdf["NAME_3"].unique()),
+                        help="List of Barangays of Butuan",
+                    )
+                # with b2:
+                #     selected_lcov = st.selectbox(
+                #         label="Select Land Cover Data",
+                #         options=[],
+                #         help="This option is not available with the current selection",
+                #     )
+                if selected_brgy != "Select All":
+                    selected_boundary_gdf = butuan_boundary_gdf[
+                        butuan_boundary_gdf["NAME_3"] == selected_brgy
+                    ]
+                    selected_boundary_gdf.to_file(
+                        "./assets/selection_brgy.kml", driver="KML"
+                    )
+                    input_df = gpd.read_file(
+                        "./assets/selection_brgy.kml", driver="KML"
+                    )
                 else:
-                    input_df = gpd.read_file('./assets/butuan_city.kml', driver="KML")
-            elif boundary == 'Land Cover':
-                with ds3_col:
-                    # land_cover_data_year = st.selectbox(label='Select Land Cover as of', options=[2003, 2010, 2015], help='Select from 3 options')
-                    land_cover_data_year = 2015
-                butuan_lcov_gdf = gpd.read_file(f'./assets/butuan_landcover_{land_cover_data_year}.shp')
-                with b1:
-                    selected_brgy = st.selectbox(label='Select Barangay', options=[], help='This option is not available with the current selection')
-                with b2:
-                    selected_lcov = st.selectbox(label='Select Land Cover', options=['Select All'] + list(butuan_lcov_gdf['CLASS'].unique()), help='Land Cover data as of 2015')
-                if selected_lcov != 'Select All':
-                    selected_lcov_gdf = butuan_lcov_gdf[butuan_lcov_gdf['CLASS'] == selected_lcov]
-                    selected_lcov_gdf.to_file('./assets/selection_lcov.kml', driver='KML')
-                    input_df = gpd.read_file('./assets/selection_lcov.kml', driver='KML')
+                    input_df = gpd.read_file("./assets/butuan_city.kml", driver="KML")
+
+            elif boundary == "Land Cover":
+                land_cover_data_year = 2015
+                butuan_lcov_gdf = gpd.read_file(
+                    f"./assets/butuan_landcover_{land_cover_data_year}.shp"
+                )
+                # with b1:
+                #     selected_brgy = st.selectbox(
+                #         label="Select Barangay",
+                #         options=[],
+                #         help="This option is not available with the current selection",
+                #     )
+                with control0:
+                    selected_lcov = st.selectbox(
+                        label="Select Land Cover",
+                        options=["Select All"]
+                        + list(butuan_lcov_gdf["CLASS"].unique()),
+                        help="Land Cover data as of 2015",
+                    )
+                if selected_lcov != "Select All":
+                    selected_lcov_gdf = butuan_lcov_gdf[
+                        butuan_lcov_gdf["CLASS"] == selected_lcov
+                    ]
+                    selected_lcov_gdf.to_file(
+                        "./assets/selection_lcov.kml", driver="KML"
+                    )
+                    input_df = gpd.read_file(
+                        "./assets/selection_lcov.kml", driver="KML"
+                    )
                 else:
-                    input_df = gpd.read_file('./assets/butuan_city.kml', driver="KML")
+                    input_df = gpd.read_file("./assets/butuan_city.kml", driver="KML")
+
+            elif boundary == 'Production and Protection':
+                production_protection = gpd.read_file('./assets/production_protection.shp')
+                with control0:
+                    selected_prod = st.selectbox('Select Region', options=['Select All'] + list(production_protection['Legend'].unique()), help='Production and Protection Region')
+                if selected_prod != 'Select All':
+                    selected_prod_gdf = production_protection[production_protection['Legend'] == selected_prod]
+                    selected_prod_gdf.to_file('./assets/selection_prod.kml', driver='KML')
+                    input_df = gpd.read_file('./assets/selection_prod.kml')
+                else:
+                    input_df = gpd.read_file("./assets/butuan_city.kml", driver="KML")
 
             bounds_to_fit = input_df.bounds
-            sw = bounds_to_fit[['miny', 'minx']].values.tolist()
-            ne = bounds_to_fit[['maxy', 'maxx']].values.tolist()
+            sw = bounds_to_fit[["miny", "minx"]].values.tolist()
+            ne = bounds_to_fit[["maxy", "maxx"]].values.tolist()
             s = str(input_df.geometry.iloc[0])
             g1 = shapely.wkt.loads(s)
             g2 = shapely.geometry.mapping(g1)
@@ -199,15 +263,15 @@ def app():
                 data = [[i[:2] for i in data[0]]]
 
         aoi = ee.FeatureCollection(ee.Geometry.MultiPolygon(data))
-        datamask = ee.Image("UMD/hansen/global_forest_change_2015").select("datamask").eq(1)
+        datamask = (
+            ee.Image("UMD/hansen/global_forest_change_2015").select("datamask").eq(1)
+        )
         lon, lat = aoi.geometry().centroid().getInfo()["coordinates"]
         l8 = ee.ImageCollection("LANDSAT/LC08/C01/T1_TOA").filterBounds(aoi)
         l8_ndvi_cloudless = l8.map(cloudlessNDVI)
 
         with st.spinner(text="Fetching data from GEE server..."):
             date_list = date_range(l8_ndvi_cloudless, aoi)
-
-        control1, _, control2 = st.columns((3.5, 0.2, 1))
 
         with control1:
             try:
@@ -222,8 +286,10 @@ def app():
                 )
 
             except IndexError as e:
-                st.error('Something went wrong! There seems to be no available images for the current selection. Please modify your selections or refresh the page.')
-                submit_button = st.form_submit_button(label='Run selection')
+                st.error(
+                    "Something went wrong! There seems to be no available images for the current selection. Please modify your selections or refresh the page."
+                )
+                submit_button = st.form_submit_button(label="Run selection")
                 return
 
         with control2:
@@ -236,9 +302,8 @@ def app():
                 help="Use to rescale images. Default is 100m.",
             )
 
-        submit_button = st.form_submit_button(label='Run selection')
+        submit_button = st.form_submit_button(label="Run selection")
 
-    # st.subheader("Dashboard")
     startdate_format = startdate.strftime("%B %d, %Y")
     enddate_format = enddate.strftime("%B %d, %Y")
 
@@ -318,15 +383,9 @@ def app():
     # # Add fullscreen button
     plugins.Fullscreen().add_to(my_map)
     plugins.MiniMap().add_to(my_map)
-    
+
     # if datasource == 'Butuan City':
-    my_map.fit_bounds([sw, ne]) 
-    
-    # st.markdown('---')
-    # st.subheader('C. Data Analytics and Visualization')
-    highlightA = alt.selection(
-        type="single", on="mouseover", fields=["Year"], nearest=True
-    )
+    my_map.fit_bounds([sw, ne])
 
     start_lower = hist_df[f"{startdate}"].quantile(0.25).min()
     start_upper = hist_df[f"{startdate}"].quantile(0.75).max()
@@ -438,7 +497,7 @@ def app():
                 images = []
                 region = aoi.geometry().bounds()
                 l8_ndvi_cloudless = l8_ndvi_cloudless.select("NDVI")
-                
+
                 zip_dir = os.path.join(os.path.expanduser("~"), "assets")
 
                 for i in range(startdate.year, enddate.year + 1):
@@ -485,7 +544,7 @@ def app():
     decrease_list = list(report_df[report_df.Interpretation.isin(["Decrease"])].index)
     increase_list = list(report_df[report_df.Interpretation.isin(["Increase"])].index)
 
-    st.markdown('---')
+    st.markdown("---")
     st.subheader("Data Analytics and Visualization")
     st.markdown(
         "Table 1. Area (in hectares) and Percent Change between Selected Dates across NDVI classes"
@@ -504,78 +563,70 @@ def app():
         unsafe_allow_html=True,
     )
 
-    if st.checkbox('Cumulative'):
+    if st.checkbox("Cumulative"):
         cumulative = True
-        tooltip_title = 'Percentile'
-    else: 
+        tooltip_title = "Proportion"
+    else:
         cumulative = False
-        tooltip_title = 'Value'
+        tooltip_title = "Density"
 
     temp_df = hist_df[(hist_df.iloc[:, 0] != 0) & (hist_df.iloc[:, 1] != 0)].copy()
     hist_df = pd.melt(temp_df)
 
-    s = sns.kdeplot(data=hist_df, x='value', hue='variable')
+    s = sns.kdeplot(data=hist_df, x="value", hue="variable", cut=1)
+    # s = sns.ecdfplot(data=hist_df, x="value", hue="variable")
     before = s.get_lines()[0].get_data()
     after = s.get_lines()[1].get_data()
-    before_df = pd.DataFrame({'NDVI':before[0], 'Density':before[1], 'Date':f'{startdate}'})
-    # before_mask = before_df['Density'] > 1
-    # before_df.loc[before_mask, 'Density'] = 1
-    after_df = pd.DataFrame({'NDVI':after[0], 'Density':after[1], 'Date':f'{enddate}'})
-    # after_mask = after_df['Density'] > 1
-    # after_df.loc[after_mask, 'Density'] = 1
+    before_df = pd.DataFrame(
+        {"NDVI": before[0], "Density": before[1], "Date": f"{startdate}"}
+    )
+    after_df = pd.DataFrame(
+        {"NDVI": after[0], "Density": after[1], "Date": f"{enddate}"}
+    )
 
     if cumulative:
-        before_df['Density'] = before_df['Density'].cumsum().div(before_df['Density'].cumsum().max())
-        after_df['Density'] = after_df['Density'].cumsum().div(after_df['Density'].cumsum().max())
+        before_df["Density"] = (
+            before_df["Density"].cumsum().div(before_df["Density"].cumsum().max())
+        )
+        after_df["Density"] = (
+            after_df["Density"].cumsum().div(after_df["Density"].cumsum().max())
+        )
     data = before_df.append(after_df).round(4)
 
-    # nearest = alt.selection(
-    #     type="single",
-    #     nearest=True,
-    #     on="mouseover",
-    #     fields=["NDVI"],
-    #     empty="none",
-    # )
-
-    # selectors = (
-    #     alt.Chart(data)
-    #     .mark_point()
-    #     .encode(x="NDVI:Q", opacity=alt.value(0))
-    #     .add_selection(nearest)
-    # )
-
-    # rules = (
-    #     alt.Chart(data)
-    #     .mark_rule(color="#1E1E1E", opacity=0.2, strokeWidth=0.5)
-    #     .encode(x="NDVI:Q",)
-    #     .transform_filter(nearest)
-    # )
-
-    altC = alt.Chart(data
-        ).mark_area(opacity=0.3
-        ).encode(
-            x=alt.X('NDVI:Q'), 
-            y=alt.Y('Density:Q'), 
-            color=alt.Color('Date:N', legend=alt.Legend(title='Date', orient="top-left")),
+    altC = (
+        alt.Chart(data)
+        .mark_area(opacity=0.3)
+        .encode(
+            x=alt.X("NDVI:Q"),
+            y=alt.Y("Density:Q"),
+            color=alt.Color(
+                "Date:N", legend=alt.Legend(title="Date", orient="top-left")
+            ),
             tooltip=[
-                    alt.Tooltip("Date:N", title="Date"),
-                    alt.Tooltip("NDVI:Q", title='NDVI', format=",.4f"),
-                    alt.Tooltip('Density:Q', title=f'{tooltip_title}', format=",.4f")
-                ])
-                
-    nearest, selectors, rules, points, text = ruler(data, 'NDVI', 'Q', altC, 'Density')
+                alt.Tooltip("Date:N", title="Date"),
+                alt.Tooltip("NDVI:Q", title="NDVI", format=",.4f"),
+                alt.Tooltip("Density:Q", title=f"{tooltip_title}", format=",.4f"),
+            ],
+        )
+    )
 
-    # # Draw points on the line, and highlight based on selection
-    # points = altC.mark_point(color="#A3AF80").encode(
-    #     opacity=alt.condition(nearest, alt.value(1), alt.value(0))
-    # )
+    altCa = (
+        alt.Chart(data)
+        .mark_line(opacity=0.3, width=2)
+        .encode(
+            x=alt.X("NDVI:Q"),
+            y=alt.Y("Density:Q"),
+            color=alt.Color(
+                "Date:N"
+            )
+        )
+    )
 
-    # # Draw text labels near the points, and highlight based on selection
-    # text = altC.mark_text(align="left", dx=5, dy=-5).encode(
-    #     text=alt.condition(nearest, "Density", alt.value(" "))
-    # )
+    nearest, selectors, rules, points, text = ruler(data, "NDVI", "Q", altC, "Density")
+    fig1 = altCa + altC + rules + selectors + points + text
+    fig1.save('./assets/fig1.png')
+    st.altair_chart(fig1, use_container_width=True)
 
-    st.altair_chart(altC + rules + selectors + points + text, use_container_width=True)
     st.markdown(
         f"<center>Figure 1. Distribution of NDVI values for images of selected dates</center><br>",
         unsafe_allow_html=True,
@@ -593,9 +644,13 @@ def app():
         unsafe_allow_html=True,
     )
 
-    option3, option1, option2 = st.columns((1,2,2))
+    option3, option1, option2 = st.columns((1, 2, 2))
     with option3:
-        select = st.radio(label='Select Wrangling', options=['Raw (None)', 'Standardize', 'Smoothen'], help='Options to visualize raw or transformed data')
+        select = st.radio(
+            label="Select Wrangling",
+            options=["Raw (None)", "Standardize", "Smoothen"],
+            help="Options to visualize raw or transformed data",
+        )
 
     rule_option_dict = {
         "Mean": "mean",
@@ -613,26 +668,23 @@ def app():
     annual = (
         alt.Chart(df_annual)
         .mark_circle(opacity=0)
-        .encode(
-            x=alt.X("Timestamp:T"),
-            y=alt.Y("NDVI:Q"),
-        )
+        .encode(x=alt.X("Timestamp:T"), y=alt.Y("NDVI:Q"),)
     )
 
-    if select == 'Smoothen':
+    if select == "Smoothen":
         with option1:
             rule_option = st.selectbox(
-            label="Select Line Aggregation",
-            options=[],
-            help="This option is not available with the current selection",
-        )
+                label="Select Line Aggregation",
+                options=[],
+                help="This option is not available with the current selection",
+            )
 
         with option2:
             band_option = option2.selectbox(
-            label="Select Error Bar Extent",
-            options=[],
-            help="This option is not available with the current selection",
-        )
+                label="Select Error Bar Extent",
+                options=[],
+                help="This option is not available with the current selection",
+            )
 
         baseC = alt.Chart(df).encode(
             x=alt.X("Timestamp:T", title=None),
@@ -643,24 +695,11 @@ def app():
             ),
         )
 
-        # pointsC = (
-        #     baseC.mark_circle()
-        #     .encode(
-        #         opacity=alt.value(0),
-        #         tooltip=[
-        #             alt.Tooltip("Timestamp:T", title="Date"),
-        #             alt.Tooltip("NDVI_Lowess:Q", title="NDVI", format=",.4f"),
-        #         ],
-        #     )
-        #     # .add_selection(highlightA)
-        # )
-
         linesC = baseC.mark_line().encode(
-            # size=alt.condition(~highlightA, alt.value(1), alt.value(3))
             tooltip=[
-                    alt.Tooltip("Timestamp:T", title="Date"),
-                    alt.Tooltip("NDVI_Lowess:Q", title="NDVI", format=",.4f"),
-                ]
+                alt.Tooltip("Timestamp:T", title="Date"),
+                alt.Tooltip("NDVI_Lowess:Q", title="NDVI", format=",.4f"),
+            ]
         )
 
         regC = (
@@ -669,11 +708,16 @@ def app():
             .encode()
         )
 
-        nearest, selectors, rules, points, text = ruler(df, 'Timestamp', 'T', linesC, 'NDVI_Lowess:Q')
+        nearest, selectors, rules, points, text = ruler(
+            df, "Timestamp", "T", linesC, "NDVI_Lowess:Q"
+        )
 
-        altAA = (annual + linesC + regC + rules + selectors + points + text).interactive(bind_y=False)
-        
-        st.altair_chart(altAA, use_container_width=True)
+        fig2 = (
+            annual + linesC + regC + rules + selectors + points + text
+        ).interactive(bind_y=False)
+        fig2.save('./assets/fig2.png')
+
+        st.altair_chart(fig2, use_container_width=True)
         st.markdown(
             "<center>Figure 2. Smoothed Trend of Mean NDVI Time-series</center><br>",
             unsafe_allow_html=True,
@@ -687,49 +731,39 @@ def app():
             unsafe_allow_html=True,
         )
 
-    elif select == 'Raw (None)':
+    elif select == "Raw (None)":
         with option1:
             rule_option = st.selectbox(
-            label="Select Line Aggregation",
-            options=["Mean", "Median", "Maximum", "Minimum"], index=1,
-            help="Defines the location of the horizontal red line along the y-axis",
-        )
+                label="Select Line Aggregation",
+                options=["Mean", "Median", "Maximum", "Minimum"],
+                index=1,
+                help="Defines the location of the horizontal red line along the y-axis",
+            )
 
         with option2:
             band_option = option2.selectbox(
-            label="Select Error Bar Extent",
-            options=[
-                "Inter-quartile Range",
-                "Confidence Interval",
-                "Standard Error",
-                "Standard Deviation",
-            ],
-            help="Defines the extent of the colored region",
-        )
-
-        # nearest, selectors, rules = ruler(data, 'Timestamp', 'T', baseA, 'NDVI')
+                label="Select Error Bar Extent",
+                options=[
+                    "Inter-quartile Range",
+                    "Confidence Interval",
+                    "Standard Error",
+                    "Standard Deviation",
+                ],
+                help="Defines the extent of the colored region",
+            )
 
         baseA = alt.Chart(df).encode(
-                x=alt.X("Timestamp:T", title=None), y=alt.Y(f"NDVI:Q", 
-                scale=alt.Scale(domain=[df['NDVI'].min(), df['NDVI'].max()]))
+            x=alt.X("Timestamp:T", title=None),
+            y=alt.Y(
+                f"NDVI:Q", scale=alt.Scale(domain=[df["NDVI"].min(), df["NDVI"].max()])
+            ),
         )
 
-        # pointsA = (
-        #     baseA.mark_circle()
-        #     .encode(
-        #         opacity=alt.value(0),
-        #         tooltip=[
-        #             alt.Tooltip("Timestamp:T", title="Date"),
-        #             alt.Tooltip("NDVI:Q", title="NDVI", format=",.4f"),
-        #         ],
-        #     )
-        #     .add_selection(highlightA)
-        # )
-
         linesA = baseA.mark_line().encode(
-            # size=alt.condition(~highlightA, alt.value(1), alt.value(3)),
-            # color=alt.Color("NDVI:Q", scale=alt.Scale(scheme="redblue"), legend=None),
-            tooltip=[alt.Tooltip("Timestamp:T", title="Date"), alt.Tooltip("NDVI:Q", title="NDVI", format=",.4f")]
+            tooltip=[
+                alt.Tooltip("Timestamp:T", title="Date"),
+                alt.Tooltip("NDVI:Q", title="NDVI", format=",.4f"),
+            ]
         )
 
         rule = (
@@ -753,10 +787,14 @@ def app():
             .encode(y=alt.Y("NDVI:Q"))
         )
 
-        nearest, selectors, rules, points, text = ruler(df, 'Timestamp', 'T', linesA, 'NDVI:Q')
-        altA = (annual + linesA + rule + bandA + selectors + rules + points + text).interactive(bind_y=False)
-
-        st.altair_chart(altA, use_container_width=True)
+        nearest, selectors, rules, points, text = ruler(
+            df, "Timestamp", "T", linesA, "NDVI:Q"
+        )
+        fig2 = (
+            annual + linesA + rule + bandA + selectors + rules + points + text
+        ).interactive(bind_y=False)
+        fig2.save('./assets/fig2.png')
+        st.altair_chart(fig2, use_container_width=True)
         st.markdown(
             "<center>Figure 2. Mean NDVI Time-series over the AOI for imagery at every available date</center><br>",
             unsafe_allow_html=True,
@@ -774,43 +812,54 @@ def app():
             unsafe_allow_html=True,
         )
 
-            # <p align="justify">The dots correspond to average NDVI values over the AOI aggregated per year. Maximum NDVI over a year span (i.e., <strong>{df_annual.NDVI.max():.2f})</strong>
-            # is observed in <strong>{df.loc[df_annual.NDVI.argmax(),'Timestamp'].strftime('%Y')}</strong>, while minimum NDVI (i.e., <strong>{df_annual.NDVI.min():.2f})</strong>
-            # is observed in <strong>{df.loc[df_annual.NDVI.argmin(),'Timestamp'].strftime('%Y')}</strong>.</p>
+        # <p align="justify">The dots correspond to average NDVI values over the AOI aggregated per year. Maximum NDVI over a year span (i.e., <strong>{df_annual.NDVI.max():.2f})</strong>
+        # is observed in <strong>{df.loc[df_annual.NDVI.argmax(),'Timestamp'].strftime('%Y')}</strong>, while minimum NDVI (i.e., <strong>{df_annual.NDVI.min():.2f})</strong>
+        # is observed in <strong>{df.loc[df_annual.NDVI.argmin(),'Timestamp'].strftime('%Y')}</strong>.</p>
 
-    elif select == 'Standardize':
+    elif select == "Standardize":
         with option1:
             rule_option = st.selectbox(
-            label="Select Line Aggregation",
-            options=[],
-            help="This option is not available with the current selection",
-        )
+                label="Select Line Aggregation",
+                options=[],
+                help="This option is not available with the current selection",
+            )
 
         with option2:
             band_option = option2.selectbox(
-            label="Select Error Bar Extent",
-            options=[],
-            help="This option is not available with the current selection",
-        )
+                label="Select Error Bar Extent",
+                options=[],
+                help="This option is not available with the current selection",
+            )
 
         baseA = alt.Chart(df).encode(
-            x=alt.X("Timestamp:T", title=None), 
+            x=alt.X("Timestamp:T", title=None),
             y=alt.Y("Standard:Q"),
-            tooltip=[alt.Tooltip('Timestamp:T'), alt.Tooltip('Standard:Q', format=",.4f")]
+            tooltip=[
+                alt.Tooltip("Timestamp:T"),
+                alt.Tooltip("Standard:Q", format=",.4f"),
+            ],
         )
 
         barA = baseA.mark_bar().encode(
             color=alt.Color(
                 "Standard:Q", scale=alt.Scale(scheme="redblue"), legend=None
             ),
-            tooltip=[alt.Tooltip("Timestamp:T", title="Date"), alt.Tooltip("NDVI:Q", title="NDVI", format=",.4f")]
+            tooltip=[
+                alt.Tooltip("Timestamp:T", title="Date"),
+                alt.Tooltip("NDVI:Q", title="NDVI", format=",.4f"),
+            ],
         )
 
         rule = alt.Chart(df).mark_rule(color="red").encode(y=alt.Y("mean(Standard):Q"))
 
-        nearest, selectors, rules, points, text = ruler(df, 'Timestamp', 'T', barA, 'Standard:Q')
-        altA = (annual + barA + rule + selectors + rules + points + text).interactive(bind_y=False)         
-        st.altair_chart(altA, use_container_width=True)
+        nearest, selectors, rules, points, text = ruler(
+            df, "Timestamp", "T", barA, "Standard:Q"
+        )
+        fig2 = (annual + barA + rule + selectors + rules + points + text).interactive(
+            bind_y=False
+        )
+        fig2.save('./assets/fig2.png')
+        st.altair_chart(fig2, use_container_width=True)
         st.markdown(
             "<center>Figure 2. Standardized Mean NDVI Time-series over the AOI for imagery at every available date</center><br>",
             unsafe_allow_html=True,
@@ -828,31 +877,8 @@ def app():
             unsafe_allow_html=True,
         )
 
-    # nearest = alt.selection(
-    #         type="single",
-    #         nearest=True,
-    #         on="mouseover",
-    #         fields=["DOY"],
-    #         empty="none",
-    #     )
-
-    # selectors = (
-    #         alt.Chart(df)
-    #         .mark_point()
-    #         .encode(x="DOY:Q", opacity=alt.value(0))
-    #         .add_selection(nearest)
-    #     )
-
-    # rules = (
-    #     alt.Chart(df)
-    #     .mark_rule(color="#838479", opacity=0.2, strokeWidth=0.5)
-    #     .encode(x="DOY:Q",)
-    #     .transform_filter(nearest)
-    # )
-    
     baseB = alt.Chart(df).encode(
         x=alt.X("DOY:Q", scale=alt.Scale(domain=(0, 340)), title="DOY")
-
     )
 
     lower = df.groupby("DOY")["NDVI"].quantile(0.25).min()
@@ -860,7 +886,10 @@ def app():
 
     lineB = baseB.mark_line().encode(
         y=alt.Y("median(NDVI):Q", scale=alt.Scale(domain=[lower, upper])),
-        tooltip=[alt.Tooltip('DOY:Q', title='DOY'), alt.Tooltip('median(NDVI):Q', title='Median NDVI')]
+        tooltip=[
+            alt.Tooltip("DOY:Q", title="DOY"),
+            alt.Tooltip("median(NDVI):Q", title="Median NDVI"),
+        ],
     )
 
     rainy_df = pd.DataFrame({"x1": [152], "x2": [334]})
@@ -893,32 +922,15 @@ def app():
         y="NDVI:Q"
     )
 
-    # pointsB = (
-    #     baseB.mark_circle()
-    #     .encode(
-    #         opacity=alt.value(0),
-    #         tooltip=[
-    #             alt.Tooltip("DOY:Q", title="DOY"),
-    #             alt.Tooltip("median(NDVI):Q", title="NDVI", format=",.4f"),
-    #         ],
-    #     )
-    #     .add_selection(highlightA)
-    # )
-    nearest, selectors, rules, points, text  = ruler(df, 'DOY', 'Q', lineB, 'median(NDVI)')
+    nearest, selectors, rules, points, text = ruler(
+        df, "DOY", "Q", lineB, "median(NDVI)"
+    )
 
-    # # Draw points on the line, and highlight based on selection
-    # points = lineB.mark_point(color="#496586").encode(
-    #     opacity=alt.condition(nearest, alt.value(1), alt.value(0))
-    # )
-
-    # # Draw text labels near the points, and highlight based on selection
-    # text = lineB.mark_text(align="left", dx=5, dy=-5).encode(
-    #     text=alt.condition(nearest, "median(NDVI):Q", alt.value(" "))
-    # )
-
-    altB = (lineB + bandB + rainy_season + dry_season1 + rules + selectors + points + text).interactive()
-
-    st.altair_chart(altB, use_container_width=True)
+    fig3 = (
+        lineB + bandB + rainy_season + dry_season1 + rules + selectors + points + text
+    ).interactive()
+    fig3.save('./assets/fig3.png')
+    st.altair_chart(fig3, use_container_width=True)
     st.markdown(
         "<center>Figure 3. Variation in NDVI values per Day of Year (DOY)</center><br>",
         unsafe_allow_html=True,

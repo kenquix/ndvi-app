@@ -1,8 +1,8 @@
 import streamlit as st
 from multiapp import MultiApp
-from apps import home, approach, prototype, board, team # import your app modules here
+from apps import home, approach, prototype, board, team  # import your app modules here
 
-st.set_page_config(page_title='Vega Map', page_icon=r'./assets/logo.png')
+st.set_page_config(page_title="Vega Map", page_icon=r"./assets/logo.png")
 
 # st.markdown(
 #     "<style>div.row-widget.stRadio > div{flex-direction:row;}</style>",
@@ -16,10 +16,11 @@ hide_streamlit_style = """
 			</style>
 			"""
 
-st.markdown(hide_streamlit_style, unsafe_allow_html=True) 
+st.markdown(hide_streamlit_style, unsafe_allow_html=True)
 
 # modify the margins
-st.markdown(f"""
+st.markdown(
+    f"""
     <style>
         .reportview-container .main .block-container{{
             max-width: 900px;
@@ -29,9 +30,11 @@ st.markdown(f"""
             padding-bottom: 1rem;
         }}
     </style>
-    """, unsafe_allow_html=True)
+    """,
+    unsafe_allow_html=True,
+)
 
-make_map_responsive= """
+make_map_responsive = """
     <style>
     [title~="st.iframe"] { width: 100%}
     </style>
@@ -45,14 +48,14 @@ make_map_responsive= """
 st.markdown(make_map_responsive, unsafe_allow_html=True)
 
 st.markdown(
-    f'''
+    f"""
         <style>
             .sidebar .sidebar-content {{
                 width: 300px;
             }}
         </style>
-    ''',
-    unsafe_allow_html=True
+    """,
+    unsafe_allow_html=True,
 )
 
 app = MultiApp()

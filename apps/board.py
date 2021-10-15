@@ -14,7 +14,7 @@ def app():
         unsafe_allow_html=True,
     )
 
-    st.markdown('---')
+    st.markdown("---")
 
     placeholder = st.empty()
     with st.spinner(text="Loading the discussion board..."):

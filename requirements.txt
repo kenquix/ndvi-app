@@ -11,3 +11,4 @@ imageio
 geopandas
 millify
 seaborn
+fpdf
