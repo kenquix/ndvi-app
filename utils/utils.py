@@ -15,6 +15,8 @@ from statsmodels.nonparametric.smoothers_lowess import lowess
 
 import folium
 
+import altair as alt
+
 basemaps = {
     'Google Maps': folium.TileLayer(
         tiles = 'https://mt1.google.com/vt/lyrs=m&x={x}&y={y}&z={z}',
@@ -217,7 +219,7 @@ def read_data(l8, startdate, enddate, aoi, datamask, scale):
 
 	diff_img = diff_img.updateMask(start_mask)
 	diff_img = diff_img.updateMask(end_mask)
-
+	
 	return df, tabular_df, start_img.updateMask(datamask), end_img.updateMask(datamask), diff_img.updateMask(datamask), diff_bin_norm, hist_df
 
 @st.cache(show_spinner=False)
@@ -255,3 +257,38 @@ def transform(df):
 # def create_download_link(val, filename):
 #     b64 = base64.b64encode(val)  # val looks like b'...'
 #     return f'<a href="data:application/octet-stream;base64,{b64.decode()}" download="{filename}.pdf">Download file</a>'
+
+def ruler(data, field, field_type, base_chart, text_value):
+	nearest = alt.selection(
+		type="single",
+		nearest=True,
+		on="mouseover",
+		fields=[f"{field}"],
+		empty="none",
+	)
+
+	selectors = (
+		alt.Chart(data)
+		.mark_point()
+		.encode(x=f"{field}:{field_type}", opacity=alt.value(0))
+		.add_selection(nearest)
+	)
+
+	rules = (
+		alt.Chart(data)
+		.mark_rule(color="#1E1E1E", opacity=0.2, strokeWidth=0.5)
+		.encode(x=f"{field}:{field_type}")
+		.transform_filter(nearest)
+	)
+
+	# Draw points on the line, and highlight based on selection
+	points = base_chart.mark_point(color="#A3AF80").encode(
+		opacity=alt.condition(nearest, alt.value(1), alt.value(0))
+	)
+
+	# Draw text labels near the points, and highlight based on selection
+	text = base_chart.mark_text(align="left", dx=5, dy=-5).encode(
+		text=alt.condition(nearest, f"{text_value}", alt.value(" "))
+	)
+
+	return nearest, selectors, rules, points, text
