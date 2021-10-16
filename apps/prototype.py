@@ -169,7 +169,7 @@ def app():
                     return
 
         elif datasource == "Butuan City":
-            control0, _, control1, _, control2 = st.columns((1.5, 0.25, 3, 0.2, 1))
+            control0, _, control1, _, control2 = st.columns((1.5, 0.25, 3, 0.25, 1.5))
             butuan_boundary_gdf = gpd.read_file("./assets/butuan.shp")
 
             gpd.io.file.fiona.drvsupport.supported_drivers["KML"] = "rw"
@@ -228,7 +228,7 @@ def app():
                         "./assets/selection_lcov.kml", driver="KML"
                     )
                 else:
-                    input_df = gpd.read_file("./assets/butuan_city.kml", driver="KML")
+                    input_df = gpd.read_file("./assets/butuan_landcover_2015.kml", driver="KML")
 
             elif boundary == 'Production and Protection':
                 production_protection = gpd.read_file('./assets/production_protection.shp')
@@ -239,7 +239,7 @@ def app():
                     selected_prod_gdf.to_file('./assets/selection_prod.kml', driver='KML')
                     input_df = gpd.read_file('./assets/selection_prod.kml')
                 else:
-                    input_df = gpd.read_file("./assets/butuan_city.kml", driver="KML")
+                    input_df = gpd.read_file("./assets/production_protection.kml", driver="KML")
 
             bounds_to_fit = input_df.bounds
             sw = bounds_to_fit[["miny", "minx"]].values.tolist()
@@ -262,8 +262,8 @@ def app():
 
         with st.spinner(text="Fetching data from GEE server..."):
             date_list = date_range(l8_ndvi_cloudless, aoi)
-
-        with control1:
+        _, user_control1, _, user_control2 = st.columns((0.25, 3, 0.25, 1))
+        with user_control1:
             try:
                 startdate, enddate = st.select_slider(
                     "Date Slider",
@@ -282,7 +282,7 @@ def app():
                 submit_button = st.form_submit_button(label="Run selection")
                 return
 
-        with control2:
+        with user_control2:
             scale = st.number_input(
                 label="Scale",
                 min_value=30,
@@ -311,7 +311,7 @@ def app():
         df["Timestamp"] = pd.to_datetime(df.Timestamp)
         df = df.round(4)
         df_annual = transform(df)
-        df.to_csv(f'{selected_brgy}.csv', index=False)
+
     visParams = {
         "min": 0,
         "max": 1,
@@ -352,8 +352,8 @@ def app():
     # basemaps["Google Terrain"].add_to(my_map)
     # basemaps["Google Maps"].add_to(my_map)
 
-    my_map.add_ee_layer(aoi.geometry(), {}, 'Boundary')
-    
+    my_map.add_ee_layer(aoi.geometry(), {'opacity':0}, 'Boundary')
+
     my_map.add_ee_layer(
         diff_img.clip(aoi.geometry()), visParams_diff, "Difference Image"
     )
