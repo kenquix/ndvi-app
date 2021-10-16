@@ -104,6 +104,7 @@ def add_ee_layer(self, ee_object, vis_params, name):
 # Add EE drawing method to folium.
 folium.Map.add_ee_layer = add_ee_layer
 
+
 @st.cache()
 def cloudlessNDVI(image):
     cloud = ee.Algorithms.Landsat.simpleCloudScore(image).select("cloud")
@@ -322,4 +323,3 @@ def ruler(data, field, field_type, base_chart, text_value):
     )
 
     return nearest, selectors, rules, points, text
-

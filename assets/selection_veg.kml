@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<kml xmlns="http://www.opengis.net/kml/2.2">
+<Document id="root_doc">
+<Schema name="selection_veg" id="selection_veg">
+	<SimpleField name="OBJECTID" type="string"></SimpleField>
+	<SimpleField name="Class" type="string"></SimpleField>
+	<SimpleField name="Shape_Leng" type="float"></SimpleField>
+	<SimpleField name="Shape_Area" type="float"></SimpleField>
+</Schema>
+<Folder><name>selection_veg</name>
+  <Placemark>
+	<Style><LineStyle><color>ff0000ff</color></LineStyle><PolyStyle><fill>0</fill></PolyStyle></Style>
+	<ExtendedData><SchemaData schemaUrl="#selection_veg">
+		<SimpleData name="OBJECTID">4</SimpleData>
+		<SimpleData name="Class">Cultivated, perennial crop</SimpleData>
+		<SimpleData name="Shape_Leng">0.0606888997879</SimpleData>
+		<SimpleData name="Shape_Area">0.000153899545203</SimpleData>
+	</SchemaData></ExtendedData>
+      <Polygon><outerBoundaryIs><LinearRing><coordinates>125.513301699914,8.90241782222478 125.510824669323,8.89978312968771 125.510684292346,8.89962195588862 125.508602264683,8.90069271299836 125.506936642013,8.90223936345592 125.506996128569,8.90444036423145 125.507115100781,8.90670085246239 125.507531506674,8.90854493480094 125.508007399122,8.90961569191069 125.508126372234,8.91122182802502 125.506877155456,8.91354180281201 125.506698695788,8.9149694792581 125.506867553395,8.91698343363862 125.510840466814,8.91418433603832 125.517383984383,8.91254845664599 125.520506223683,8.90976375719168 125.5180606217,8.90753366334792 125.517049351147,8.90693879868667 125.516454485586,8.90568958190875 125.517882162032,8.90479728356786 125.519547784703,8.90521368946025 125.520023677151,8.90378601301416 125.519607271259,8.9019419306756 125.518358054481,8.90009784833705 125.516513972142,8.89950298277648 125.515145782252,8.90039528111737 125.514312970467,8.90158501133925 125.513301699914,8.90241782222478</coordinates></LinearRing></outerBoundaryIs></Polygon>
+  </Placemark>
+</Folder>
+</Document></kml>

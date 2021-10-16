@@ -31,17 +31,18 @@ from fpdf import FPDF
 
 from utils.utils import *
 
+
 def app():
     class PDF(FPDF):
         def header(self):
             # Logo
-            self.image(r'./assets/header.jpg', 10, 8, 33)
+            self.image(r"./assets/header.jpg", 10, 8, 33)
             # Arial bold 15
-            self.set_font('Arial', 'B', 15)
+            self.set_font("Arial", "B", 15)
             # Move to the right
             self.cell(80)
             # Title
-            self.cell(30, 10, 'Vegetation Assessment and Monitoring Report', 0, 0, 'C')
+            self.cell(30, 10, "Vegetation Assessment and Monitoring Report", 0, 0, "C")
             # Line break
             self.ln(20)
 
@@ -50,9 +51,9 @@ def app():
             # Position at 1.5 cm from bottom
             self.set_y(-15)
             # Arial italic 8
-            self.set_font('Arial', 'I', 8)
+            self.set_font("Arial", "I", 8)
             # Page number
-            self.cell(0, 10, 'Page ' + str(self.page_no()) + '/{nb}', 0, 0, 'C')
+            self.cell(0, 10, "Page " + str(self.page_no()) + "/{nb}", 0, 0, "C")
 
     Map = geemap.Map()
     st.header("Vegetation Assessment and Monitoring App")
@@ -68,6 +69,7 @@ def app():
         )
     with st.form(key="form1", clear_on_submit=False):
         if datasource == "User-Defined":
+            _, control1, _, control2 = st.columns((0.25, 3, 0.25, 1))
             with ds2_col:
                 user_input_method = st.radio(
                     label="Select input method",
@@ -178,7 +180,13 @@ def app():
             with ds2_col:
                 boundary = st.selectbox(
                     label="Select Boundary",
-                    options=["Administrative (Brgy Level)", "Land Cover", "Production and Protection"],
+                    options=[
+                        "Administrative (Brgy Level)",
+                        "Land Cover",
+                        "Production and Protection",
+                        "Vegetation Cover",
+                        "Sub-watershed",
+                    ],
                     help="Define the boundary to be used",
                 )
 
@@ -205,10 +213,7 @@ def app():
                     input_df = gpd.read_file("./assets/butuan_city.kml", driver="KML")
 
             elif boundary == "Land Cover":
-                land_cover_data_year = 2015
-                butuan_lcov_gdf = gpd.read_file(
-                    f"./assets/butuan_landcover_{land_cover_data_year}.shp"
-                )
+                butuan_lcov_gdf = gpd.read_file("./assets/butuan_landcover_2015.shp")
 
                 with control0:
                     selected_lcov = st.selectbox(
@@ -228,18 +233,74 @@ def app():
                         "./assets/selection_lcov.kml", driver="KML"
                     )
                 else:
-                    input_df = gpd.read_file("./assets/butuan_landcover_2015.kml", driver="KML")
+                    input_df = gpd.read_file(
+                        "./assets/butuan_landcover_2015.kml", driver="KML"
+                    )
 
-            elif boundary == 'Production and Protection':
-                production_protection = gpd.read_file('./assets/production_protection.shp')
+            elif boundary == "Production and Protection":
+                production_protection = gpd.read_file(
+                    "./assets/production_protection.shp"
+                )
                 with control0:
-                    selected_prod = st.selectbox('Select Region', options=['Select All'] + list(production_protection['Legend'].unique()), help='Production and Protection Region')
-                if selected_prod != 'Select All':
-                    selected_prod_gdf = production_protection[production_protection['Legend'] == selected_prod]
-                    selected_prod_gdf.to_file('./assets/selection_prod.kml', driver='KML')
-                    input_df = gpd.read_file('./assets/selection_prod.kml')
+                    selected_prod = st.selectbox(
+                        "Select Region",
+                        options=["Select All"]
+                        + list(production_protection["Legend"].unique()),
+                        help="Production and Protection Areas",
+                    )
+                if selected_prod != "Select All":
+                    selected_prod_gdf = production_protection[
+                        production_protection["Legend"] == selected_prod
+                    ]
+                    selected_prod_gdf.to_file(
+                        "./assets/selection_prod.kml", driver="KML"
+                    )
+                    input_df = gpd.read_file("./assets/selection_prod.kml")
                 else:
-                    input_df = gpd.read_file("./assets/production_protection.kml", driver="KML")
+                    input_df = gpd.read_file(
+                        "./assets/production_protection.kml", driver="KML"
+                    )
+
+            elif boundary == "Vegetation Cover":
+                vegetation_cover = gpd.read_file("./assets/vegetation_cover.shp")
+                with control0:
+                    selected_veg = st.selectbox(
+                        "Select Region",
+                        options=["Select All"]
+                        + list(vegetation_cover["Class"].unique()),
+                        help="Vegetation Cover Boundaries",
+                    )
+                if selected_veg != "Select All":
+                    selected_prod_gdf = vegetation_cover[
+                        vegetation_cover["Class"] == selected_veg
+                    ]
+                    selected_prod_gdf.to_file(
+                        "./assets/selection_veg.kml", driver="KML"
+                    )
+                    input_df = gpd.read_file("./assets/selection_veg.kml")
+                else:
+                    input_df = gpd.read_file(
+                        "./assets/vegetation_cover.kml", driver="KML"
+                    )
+
+            elif boundary == "Sub-watershed":
+                watershed = gpd.read_file("./assets/watershed.shp")
+                with control0:
+                    selected_watershed = st.selectbox(
+                        "Select Region",
+                        options=["Select All"] + list(watershed["Subwatersh"].unique()),
+                        help="Vegetation Cover Boundaries",
+                    )
+                if selected_watershed != "Select All":
+                    selected_prod_gdf = watershed[
+                        watershed["Subwatersh"] == selected_watershed
+                    ]
+                    selected_prod_gdf.to_file(
+                        "./assets/selection_watershed.kml", driver="KML"
+                    )
+                    input_df = gpd.read_file("./assets/selection_watershed.kml")
+                else:
+                    input_df = gpd.read_file("./assets/watershed.kml", driver="KML")
 
             bounds_to_fit = input_df.bounds
             sw = bounds_to_fit[["miny", "minx"]].values.tolist()
@@ -262,8 +323,8 @@ def app():
 
         with st.spinner(text="Fetching data from GEE server..."):
             date_list = date_range(l8_ndvi_cloudless, aoi)
-        _, user_control1, _, user_control2 = st.columns((0.25, 3, 0.25, 1))
-        with user_control1:
+
+        with control1:
             try:
                 startdate, enddate = st.select_slider(
                     "Date Slider",
@@ -282,7 +343,7 @@ def app():
                 submit_button = st.form_submit_button(label="Run selection")
                 return
 
-        with user_control2:
+        with control2:
             scale = st.number_input(
                 label="Scale",
                 min_value=30,
@@ -352,7 +413,7 @@ def app():
     # basemaps["Google Terrain"].add_to(my_map)
     # basemaps["Google Maps"].add_to(my_map)
 
-    my_map.add_ee_layer(aoi.geometry(), {'opacity':0}, 'Boundary')
+    my_map.add_ee_layer(aoi.geometry(), {"opacity": 0}, "Boundary")
 
     my_map.add_ee_layer(
         diff_img.clip(aoi.geometry()), visParams_diff, "Difference Image"
@@ -367,8 +428,6 @@ def app():
         visParams,
         f'{enddate.strftime("%d %B %Y")} Image',
     )
-
-
 
     # # Add a layer control panel to the map.
     my_map.add_child(folium.LayerControl())
@@ -607,13 +666,7 @@ def app():
     altCa = (
         alt.Chart(data)
         .mark_line(opacity=0.3, width=2)
-        .encode(
-            x=alt.X("NDVI:Q"),
-            y=alt.Y("Density:Q"),
-            color=alt.Color(
-                "Date:N"
-            )
-        )
+        .encode(x=alt.X("NDVI:Q"), y=alt.Y("Density:Q"), color=alt.Color("Date:N"))
     )
 
     nearest, selectors, rules, points, text = ruler(data, "NDVI", "Q", altC, "Density")
@@ -706,9 +759,9 @@ def app():
             df, "Timestamp", "T", linesC, "NDVI_Lowess:Q"
         )
 
-        fig2 = (
-            annual + linesC + regC + rules + selectors + points + text
-        ).interactive(bind_y=False)
+        fig2 = (annual + linesC + regC + rules + selectors + points + text).interactive(
+            bind_y=False
+        )
         # fig2.save('./assets/fig2.png')
 
         st.altair_chart(fig2, use_container_width=True)
