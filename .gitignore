@@ -1,4 +1,15 @@
 *.csv
 *.vscode
-*__pycache__
+.streamlit
+__pycache__
 *.ipynb
+assets/*.cpg
+assets/*.dbf
+assets/*.prj
+assets/*.sbn
+assets/*.sbx
+assets/*.shp
+assets/*.shx
+assets/*.png
+assets/*.gif
+assets/barangay ndvi/*.csv
