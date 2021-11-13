@@ -1,4 +1,4 @@
-<a href="vegamap.herokuapp.com">ndvi-app</a>
+<a href="https://vegamap.herokuapp.com/">ndvi-app</a>
 
 <p align="justify">A web app that aims to provide information that can 
 complement the efforts of our decision-makers in monitoring the overall vegetation health of an area, especially our 
