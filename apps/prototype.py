@@ -33,9 +33,6 @@ from utils.utils import *
 
 
 def app():
-    
-#     os.environ["EARTHENGINE_TOKEN"] == st.secrets["EARTHENGINE_TOKEN"]
-    
     class PDF(FPDF):
         def header(self):
             # Logo
